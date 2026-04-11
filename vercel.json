@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+
+  "installCommand": "npm ci",
+  "buildCommand": "cd website && export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && next build",
+  "outputDirectory": "website/.next",
+
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "ELECTRON_SKIP_BINARY_DOWNLOAD": "1"
+  },
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options",          "value": "nosniff" },
+        { "key": "X-Frame-Options",                 "value": "DENY" },
+        { "key": "Referrer-Policy",                 "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy",              "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Strict-Transport-Security",       "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy",         "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://api.github.com https://vitals.vercel-insights.com; frame-ancestors 'none';" }
+      ]
+    }
+  ]
+}
