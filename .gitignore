@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build / dist
+dist/
+out/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Electron / Vite
+desktop/release/
+desktop/dist-electron/
+
+# Env & secrets
+.env
+.env*.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs & debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Tor binaries (large; place locally per docs)
+website/public/tor-bundle/
+desktop/resources/tor/**/*
+!desktop/resources/tor/README.md
+
+# Blog data (optional: track in git for demo; uncomment to ignore)
+# website/data/posts.json

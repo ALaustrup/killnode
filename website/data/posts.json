@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "welcome-to-killnode",
+    "title": "Welcome to KillNode",
+    "excerpt": "Privacy-first tooling with a sharp edge — what KillNode is and why it exists.",
+    "content": "KillNode combines a public site, deep documentation, and a desktop control surface for **Tor**, **network isolation**, and **carefully scoped** anonymity workflows.\n\nThis post ships with the repository as sample content. Replace it from `/admin` after signing in.\n\n> Read `LEGAL_AND_ETHICS.md` before deploying or distributing builds.",
+    "date": "2026-04-01T12:00:00.000Z"
+  },
+  {
+    "slug": "operational-security-baseline",
+    "title": "Operational Security Baseline",
+    "excerpt": "A short checklist before you enable Ghost Mode or the neural killswitch.",
+    "content": "1. **Authorize** the host and network you are about to modify.\n2. **Snapshot** or document current adapter state so you can restore connectivity.\n3. **Test** Tor paths and proxy rotation in a lab environment.\n4. **Never** assume anonymity equals immunity — comply with law and policy.\n\nSee `USAGE.md` and `TROUBLESHOOTING.md` for platform notes.",
+    "date": "2026-04-05T09:30:00.000Z"
+  }
+]
