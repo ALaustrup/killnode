@@ -9,24 +9,50 @@ on:
 jobs:
   website:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: killnode
+          POSTGRES_PASSWORD: killnode
+          POSTGRES_DB: killnode
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
+
       - name: Install dependencies
         run: npm ci
-      - name: Prisma migrate & seed (website)
+
+      - name: Prisma generate + migrate + seed (website)
         working-directory: website
+        env:
+          DATABASE_URL: postgresql://killnode:killnode@localhost:5432/killnode
+          DIRECT_URL: postgresql://killnode:killnode@localhost:5432/killnode
         run: |
-          mkdir -p data
           npx prisma generate
           npx prisma migrate deploy
           npx prisma db seed
+
       - name: Lint website
         run: npm run lint:web
+
       - name: Build website
+        env:
+          DATABASE_URL: postgresql://killnode:killnode@localhost:5432/killnode
+          DIRECT_URL: postgresql://killnode:killnode@localhost:5432/killnode
         run: npm run build:web
 
   desktop:
@@ -37,13 +63,17 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
+
       - name: Install dependencies
         run: npm ci
+
       - name: Typecheck desktop
         run: npm run typecheck --workspace=desktop
+
       - name: Build desktop
         run: npm run build --workspace=desktop

@@ -52,7 +52,7 @@ desktop/resources/tor/**/*
 # Next.js Windows build sandbox (see website/scripts/run-next-build.mjs)
 website/.next-sandbox-home/
 
-# SQLite (website Prisma)
+# Website SQLite artefacts (legacy local dev only)
 website/data/*.db
 website/data/*.db-journal
 website/prisma/**/*.db
