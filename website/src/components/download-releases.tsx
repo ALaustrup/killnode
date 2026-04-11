@@ -19,6 +19,16 @@ function formatBytes(n: number) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Preferred primary asset order */
+function pickPrimary(assets: Asset[]): Asset | undefined {
+  const order = [/\.exe$/i, /\.AppImage$/i, /\.dmg$/i, /\.zip$/i];
+  for (const re of order) {
+    const found = assets.find((a) => re.test(a.name));
+    if (found) return found;
+  }
+  return assets[0];
+}
+
 export function DownloadReleases() {
   const [data, setData] = useState<Payload | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -31,7 +41,7 @@ export function DownloadReleases() {
         const res = await fetch("/api/releases/latest", { cache: "no-store" });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
-          throw new Error(j.error || `HTTP ${res.status}`);
+          throw new Error((j as { error?: string }).error || `HTTP ${res.status}`);
         }
         const j = (await res.json()) as Payload;
         if (!cancelled) setData(j);
@@ -41,63 +51,90 @@ export function DownloadReleases() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
     return (
-      <p className="max-w-md font-mono text-xs text-[#00FFFF]/80">Pulling release telemetry from GitHub…</p>
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-14 w-56 animate-pulse rounded-md bg-neon-red/10" />
+        <p className="font-mono text-[10px] text-neon-cyan/50">Pulling release telemetry…</p>
+      </div>
     );
   }
 
   if (err || !data) {
     return (
-      <div className="max-w-lg text-xs text-muted-foreground">
-        <p className="text-[#FF0000]/90">Release feed offline: {err ?? "unknown"}</p>
-        <Button variant="cta" size="lg" className="mt-4" asChild>
-          <a href="https://github.com/Alaustrup/killnode/releases" rel="noopener noreferrer">
-            Open releases (fallback)
+      <div className="flex w-full max-w-md flex-col items-center gap-3 text-center">
+        <p className="font-mono text-xs text-neon-red/80">
+          Release feed offline{err ? `: ${err}` : ""}.
+        </p>
+        <Button variant="cta" size="lg" asChild>
+          <a
+            href="https://github.com/Alaustrup/killnode/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View releases on GitHub →
           </a>
         </Button>
+        <p className="text-[10px] text-muted-foreground/50">
+          Set <code className="font-mono">GITHUB_REPO_*</code> in{" "}
+          <code className="font-mono">website/.env</code> to enable this feed.
+        </p>
       </div>
     );
   }
 
-  const primary =
-    data.assets.find((a) => /\.exe$/i.test(a.name)) ||
-    data.assets.find((a) => /\.AppImage$/i.test(a.name)) ||
-    data.assets.find((a) => /\.dmg$/i.test(a.name)) ||
-    data.assets[0];
+  const primary = pickPrimary(data.assets);
 
   return (
     <div className="flex w-full max-w-xl flex-col items-center gap-4">
-      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#00FFFF]/70">
-        latest · {data.tag || "—"} · {data.publishedAt?.slice(0, 10) ?? ""}
+      {/* Tag badge */}
+      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-neon-cyan/60">
+        latest · <span className="text-neon-cyan">{data.tag || "—"}</span>
+        {data.publishedAt ? ` · ${data.publishedAt.slice(0, 10)}` : ""}
       </p>
+
+      {/* Primary CTA */}
       {primary && (
-        <Button variant="cta" size="lg" asChild>
+        <Button variant="cta" size="lg" className="w-full max-w-xs sm:w-auto" asChild>
           <a href={primary.url} rel="noopener noreferrer">
-            Download {primary.name}
+            ↓ {primary.name}
           </a>
         </Button>
       )}
-      {data.assets.length > 1 && (
-        <ul className="w-full space-y-2 border border-[#FF0000]/25 bg-black/50 p-4 text-left font-mono text-[10px] text-muted-foreground">
-          {data.assets.map((a) => (
-            <li key={a.url} className="flex flex-wrap items-center justify-between gap-2">
-              <a href={a.url} className="text-[#00FFFF] hover:underline" rel="noopener noreferrer">
-                {a.name}
-              </a>
-              <span className="text-[#FF0000]/70">{formatBytes(a.size)}</span>
-            </li>
-          ))}
-        </ul>
+
+      {/* All assets */}
+      {data.assets.length > 0 && (
+        <div className="w-full overflow-hidden rounded border border-neon-red/20 bg-black/50">
+          <p className="border-b border-white/5 px-4 py-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground/60">
+            All builds
+          </p>
+          <ul className="divide-y divide-white/5 px-4 py-1">
+            {data.assets.map((a) => (
+              <li key={a.url} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <a
+                  href={a.url}
+                  className="font-mono text-[11px] text-neon-cyan hover:underline"
+                  rel="noopener noreferrer"
+                >
+                  {a.name}
+                </a>
+                <span className="font-mono text-[10px] text-neon-red/60">{formatBytes(a.size)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
+
       {data.htmlUrl && (
-        <a href={data.htmlUrl} className="text-xs text-[#00FFFF]/80 hover:underline" rel="noopener noreferrer">
-          View release notes →
+        <a
+          href={data.htmlUrl}
+          className="text-[11px] text-neon-cyan/60 hover:text-neon-cyan hover:underline"
+          rel="noopener noreferrer"
+        >
+          Release notes on GitHub →
         </a>
       )}
     </div>

@@ -24,7 +24,12 @@ export const metadata: Metadata = {
     template: "%s · KillNode",
   },
   description:
-    "KillNode — cyberpunk privacy tooling. Website, blog, and desktop neural surface for Tor and network control.",
+    "KillNode — Tor orchestration, proxy mesh, and neural killswitch. Privacy tooling for authorized operators.",
+  metadataBase: new URL("https://github.com/Alaustrup/killnode"),
+  openGraph: {
+    siteName: "KillNode",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -35,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} min-h-screen font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} flex min-h-screen flex-col font-sans`}
       >
         {children}
       </body>

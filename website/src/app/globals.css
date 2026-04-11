@@ -13,12 +13,12 @@
     --secondary: 180 100% 50%;
     --secondary-foreground: 0 0% 0%;
     --muted: 240 5% 12%;
-    --muted-foreground: 215 15% 65%;
+    --muted-foreground: 215 15% 60%;
     --accent: 187 100% 47%;
     --accent-foreground: 0 0% 0%;
     --destructive: 348 100% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 348 60% 18%;
+    --border: 348 60% 14%;
     --input: 240 5% 14%;
     --ring: 187 100% 47%;
     --radius: 0.25rem;
@@ -28,27 +28,27 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-black text-foreground antialiased;
-    background-image: radial-gradient(
-        ellipse 120% 80% at 50% -20%,
-        rgba(255, 0, 60, 0.12),
-        transparent 50%
-      ),
-      radial-gradient(
-        ellipse 80% 50% at 100% 50%,
-        rgba(0, 240, 255, 0.06),
-        transparent 45%
-      );
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255, 0, 60, 0.11), transparent 50%),
+      radial-gradient(ellipse 80% 50% at 100% 50%,  rgba(0, 240, 255, 0.05), transparent 45%);
     min-height: 100vh;
   }
 }
 
 @layer utilities {
   .text-glow-red {
-    text-shadow: 0 0 24px rgba(255, 0, 60, 0.55);
+    text-shadow: 0 0 28px rgba(255, 0, 60, 0.6), 0 0 60px rgba(255, 0, 60, 0.2);
   }
   .text-glow-cyan {
-    text-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
+    text-shadow: 0 0 24px rgba(0, 240, 255, 0.5), 0 0 50px rgba(0, 240, 255, 0.15);
+  }
+  .border-white\/8 {
+    border-color: rgba(255,255,255,0.08);
   }
 }
