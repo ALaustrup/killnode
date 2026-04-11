@@ -99,7 +99,7 @@ export function DownloadReleases() {
       {/* Primary CTA */}
       {primary && (
         <Button variant="cta" size="lg" className="w-full max-w-xs sm:w-auto" asChild>
-          <a href={primary.url} rel="noopener noreferrer">
+          <a href={primary.url} target="_blank" rel="noopener noreferrer">
             ↓ {primary.name}
           </a>
         </Button>

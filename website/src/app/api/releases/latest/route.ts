@@ -12,7 +12,6 @@ export async function GET() {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       "User-Agent": "KillNode-Website",
     },
-    next: { revalidate: 120 },
   });
 
   if (!res.ok) {

@@ -18,6 +18,13 @@ const orbitron = Orbitron({
   weight: ["400", "700", "900"],
 });
 
+function siteUrl() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
 export const metadata: Metadata = {
   title: {
     default: "KillNode",
@@ -25,7 +32,7 @@ export const metadata: Metadata = {
   },
   description:
     "KillNode — Tor orchestration, proxy mesh, and neural killswitch. Privacy tooling for authorized operators.",
-  metadataBase: new URL("https://github.com/Alaustrup/killnode"),
+  metadataBase: new URL(siteUrl()),
   openGraph: {
     siteName: "KillNode",
     type: "website",
