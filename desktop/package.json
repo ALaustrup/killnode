@@ -2,23 +2,32 @@
   "name": "@killnode/desktop",
   "version": "1.0.0",
   "private": true,
-  "description": "KillNode desktop — Tor control, neural killswitch, ghost mode",
+  "description": "KillNode desktop — Tor, proxy mesh, neural killswitch, WebTorrent",
   "author": "Alaustrup",
   "license": "MIT",
   "main": "out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "dev": "prisma generate --schema prisma/schema.prisma && electron-vite dev",
+    "build": "prisma generate --schema prisma/schema.prisma && electron-vite build",
     "preview": "electron-vite preview",
     "package": "npm run build && electron-builder",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@prisma/client": "^6.3.0",
+    "magnet-uri": "^7.0.5",
+    "proxy-chain": "^2.4.1",
+    "socks-proxy-agent": "^8.0.4",
+    "socks": "^2.8.3",
+    "webtorrent": "^2.5.1"
+  },
   "devDependencies": {
     "@types/node": "^22.9.0",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
+    "prisma": "^6.3.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
   },
@@ -29,7 +38,9 @@
       "output": "release"
     },
     "files": [
-      "out/**/*"
+      "out/**/*",
+      "package.json",
+      "prisma/schema.prisma"
     ],
     "extraResources": [
       {
@@ -38,16 +49,32 @@
         "filter": ["**/*"]
       }
     ],
+    "asarUnpack": [
+      "**/node_modules/@prisma/**",
+      "**/node_modules/.prisma/**"
+    ],
+    "protocols": [
+      {
+        "name": "Magnet URI",
+        "schemes": ["magnet"]
+      }
+    ],
     "win": {
-      "target": ["nsis", "zip"]
+      "target": ["nsis", "zip"],
+      "artifactName": "${productName}-${version}-win.${ext}"
     },
     "linux": {
       "target": ["AppImage", "deb"],
-      "category": "Network"
+      "category": "Network",
+      "artifactName": "${productName}-${version}-linux.${ext}"
     },
     "mac": {
       "target": ["dmg", "zip"],
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "artifactName": "${productName}-${version}-mac.${ext}"
+    },
+    "dmg": {
+      "sign": false
     }
   }
 }

@@ -8,9 +8,9 @@
     --foreground: 180 100% 97%;
     --card: 240 6% 6%;
     --card-foreground: 180 100% 97%;
-    --primary: 348 100% 50%;
+    --primary: 0 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 187 100% 47%;
+    --secondary: 180 100% 50%;
     --secondary-foreground: 0 0% 0%;
     --muted: 240 5% 12%;
     --muted-foreground: 215 15% 65%;

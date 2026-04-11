@@ -2,8 +2,10 @@ import { spawn, type ChildProcess } from "child_process";
 import fs from "fs";
 import path from "path";
 import { app } from "electron";
+import { registerManagedChild } from "./process-registry";
 
 let torProcess: ChildProcess | null = null;
+let lastSocksPort = 9050;
 
 function resourcesTorDir(): string {
   if (app.isPackaged) {
@@ -31,6 +33,10 @@ export function isTorRunning(): boolean {
   return torProcess !== null && torProcess.exitCode === null;
 }
 
+export function getTorSocksPort(): number {
+  return lastSocksPort;
+}
+
 export async function startTor(options: {
   socksPort?: number;
   controlPort?: number;
@@ -42,6 +48,7 @@ export async function startTor(options: {
     return { ok: true, message: "Tor already running" };
   }
   const socksPort = options.socksPort ?? 9050;
+  lastSocksPort = socksPort;
   const controlPort = options.controlPort ?? 9051;
   const torPath = candidateTorPaths(options.customBinary).find((p) => {
     try {
@@ -85,6 +92,7 @@ MaxCircuitDirtiness ${mcd}
     return { ok: false, message: `Failed to spawn Tor: ${msg}` };
   }
   torProcess = proc;
+  registerManagedChild(proc, "tor");
   proc.on("exit", () => {
     torProcess = null;
   });

@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
 import { requireAdminCookie } from "@/lib/api-auth";
-import { readPosts, writePosts, type BlogPost } from "@/lib/posts";
+import { prisma } from "@/lib/db";
+import { type BlogPost } from "@/lib/posts";
 
 type Ctx = { params: Promise<{ slug: string }> };
+
+function serialize(row: {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  createdAt: Date;
+}): BlogPost {
+  return {
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    content: row.content,
+    date: row.createdAt.toISOString(),
+  };
+}
 
 export async function PUT(request: Request, ctx: Ctx) {
   if (!(await requireAdminCookie())) {
@@ -15,27 +32,27 @@ export async function PUT(request: Request, ctx: Ctx) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const posts = await readPosts();
-  const idx = posts.findIndex((p) => p.slug === paramSlug);
-  if (idx === -1) {
+  const cur = await prisma.post.findUnique({ where: { slug: paramSlug } });
+  if (!cur) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  const cur = posts[idx];
   const nextSlug = (body.slug?.trim() || cur.slug).toLowerCase();
-  if (nextSlug !== paramSlug && posts.some((p) => p.slug === nextSlug)) {
-    return NextResponse.json({ error: "Slug conflict" }, { status: 409 });
+  if (nextSlug !== paramSlug) {
+    const clash = await prisma.post.findUnique({ where: { slug: nextSlug } });
+    if (clash) {
+      return NextResponse.json({ error: "Slug conflict" }, { status: 409 });
+    }
   }
-  const title = body.title?.trim() || cur.title;
-  const updated: BlogPost = {
-    slug: nextSlug,
-    title,
-    excerpt: body.excerpt !== undefined ? String(body.excerpt) : cur.excerpt,
-    content: body.content !== undefined ? String(body.content) : cur.content,
-    date: cur.date,
-  };
-  posts[idx] = updated;
-  await writePosts(posts);
-  return NextResponse.json(updated);
+  const row = await prisma.post.update({
+    where: { slug: paramSlug },
+    data: {
+      slug: nextSlug,
+      title: body.title?.trim() || cur.title,
+      excerpt: body.excerpt !== undefined ? String(body.excerpt) : cur.excerpt,
+      content: body.content !== undefined ? String(body.content) : cur.content,
+    },
+  });
+  return NextResponse.json(serialize(row));
 }
 
 export async function DELETE(_request: Request, ctx: Ctx) {
@@ -43,11 +60,10 @@ export async function DELETE(_request: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { slug } = await ctx.params;
-  const posts = await readPosts();
-  const next = posts.filter((p) => p.slug !== slug);
-  if (next.length === posts.length) {
+  try {
+    await prisma.post.delete({ where: { slug } });
+  } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  await writePosts(next);
   return NextResponse.json({ ok: true });
 }

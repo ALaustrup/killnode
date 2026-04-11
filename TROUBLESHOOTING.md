@@ -1,120 +1,135 @@
 # KillNode — Troubleshooting
 
-Symptoms are grouped by area. When in doubt, capture **logs** (terminal output for web/desktop build, Electron DevTools console in dev, Tor stderr in terminal).
+---
+
+## Prisma / SQLite
+
+### `prisma generate` fails on Windows (`EPERM` / rename `query_engine`)
+
+- Close editors/AV scanning `node_modules`.
+- Run the terminal **as Administrator** once to unblock engine extraction.
+- Re-run `npx prisma generate` from the specific package (`website/` or `desktop/`).
+
+### Website: “no such table: Post”
+
+- The website schema pins SQLite to `website/data/killnode.db` (`file:../data/killnode.db` in `website/prisma/schema.prisma`).
+- Run `mkdir -p website/data` (PowerShell: `New-Item -ItemType Directory -Force website/data`) then `cd website && npx prisma migrate deploy`.
+
+### Monorepo: wrong Prisma models (Setting vs Post)
+
+KillNode generates **two clients** into different folders:
+
+- `website/src/generated/prisma`
+- `desktop/src/main/generated/prisma`
+
+Never run `prisma generate` for one schema and expect the other package to work until you regenerate **both**.
+
+### Desktop packaged app: Prisma engine missing
+
+Ensure `electron-builder` keeps native engines unpackable (`asarUnpack` already lists `@prisma/**` and `.prisma/**`). If you customize packaging, preserve `node_modules/.prisma` alongside the app.
 
 ---
 
-## Monorepo install
+## Next.js build (`EPERM scandir … Application Data` or profile junctions)
 
-### `npm install` fails with peer dependency errors
+Some Windows environments throw `EPERM` when tooling scans `%USERPROFILE%` and hits the **`Application Data` → `AppData\Roaming` junction** (permission denied on `scandir`).
 
-- Use **Node 20+** (`node -v`).
-- Delete `node_modules` in the root, `website/`, and `desktop/`, then run `npm install` from the root only (workspaces hoist dependencies).
+Mitigations shipped in this repo:
 
-### Workspace command not found
+1. **`website/next.config.ts`** sets `outputFileTracingRoot` to the **monorepo root** (`KillNode/`) so Next does not mis-infer a tracing root on Windows workspaces.
+2. **`website/scripts/run-next-build.mjs`** runs `next build` with `USERPROFILE` / `HOME` / `LOCALAPPDATA` pointed at **`website/.next-sandbox-home/`** (gitignored) for that subprocess only—avoiding profile junction traversal.
+3. **`website/package.json`** `build` invokes that script after Prisma steps.
 
-- Run scripts via root `package.json` (`npm run dev:web`) or `cd website && npm run dev`.
+If problems persist: elevated shell, WSL, or rely on Linux CI (`ci.yml`) for production builds.
 
----
+### ESLint and generated Prisma
 
-## Website (Next.js)
-
-### `next: command not found` or missing modules
-
-- Run `npm install` from repository root.
-- Execute `npm run dev` from `website/` or `npm run dev:web` from root.
-
-### Admin login works locally but not in production
-
-- Set `ADMIN_SESSION_SECRET` to a **strong random string (16+ chars)** in the production environment.
-- Ensure HTTPS so the `Secure` cookie flag works as intended.
-- Confirm `ADMIN_USERNAME` / `ADMIN_PASSWORD` match what you type.
-
-### Blog posts do not persist
-
-- The default store is `website/data/posts.json`. Ensure the runtime user can **write** to `website/data/`.
-- On read-only filesystems (some serverless platforms), switch to a database or mounted volume — the stock code expects a writable file.
-
-### Middleware redirect loop on `/admin`
-
-- Clear cookies for the site.
-- Verify `ADMIN_SESSION_SECRET` is identical across **all** server instances behind a load balancer.
-
-### ESLint flat config errors
-
-- Ensure `@eslint/eslintrc` is installed in `website/` (declared in `website/package.json`).
+`eslint.config.mjs` ignores **`src/generated/**`** so `next build` does not lint the Prisma client output (it uses `require()` and triggers `@typescript-eslint/no-require-imports`). Do not remove that ignore while the client is generated into `src/generated/prisma`.
 
 ---
 
-## Desktop (Electron)
+## Electron / desktop
 
-### Blank window or renderer errors
+### Main process: `Cannot find module './generated/prisma'`
 
-- Dev: confirm `electron-vite` started without errors; check the **DevTools** console.
-- Prod: verify `out/renderer/index.html` exists after `npm run build`.
+Run `npx prisma generate --schema prisma/schema.prisma` inside `desktop/`, then `npm run build --workspace=desktop`. The Vite plugin copies `src/main/generated` → `out/main/generated`.
 
-### `Tor binary not found`
+### WebTorrent errors on start
 
-- Install system Tor **or** copy Expert Bundle files into `desktop/resources/tor/` (`tor` or `tor.exe` per platform).
-- Or use **Browse…** in the UI to set `torCustomPath`.
+Ensure writable `userData/torrents`. If a corporate proxy intercepts TLS, tracker announces may fail — inspect the main-process terminal for `[webtorrent]` errors.
 
-### Tor starts then exits immediately
+### Magnet links open the wrong binary (Windows dev)
 
-- Check **stderr** logs in the terminal that launched Electron (main process logs `[tor]` lines).
-- Delete the `tor-data` folder under Electron `userData` if the data directory is corrupted (Tor will recreate).
-
-### Neural Killswitch does nothing or errors
-
-- **Windows:** Run KillNode **as Administrator** for `Disable-NetAdapter` to succeed.
-- **Linux (NetworkManager):** `nmcli networking off` requires NetworkManager; on minimal systems install/configure NM or use manual `ip link` / `rfkill` as root.
-- **Linux (rfkill path):** May require `sudo` — the app does not embed privilege escalation.
-- **macOS:** Wi‑Fi toggles target common `en0`/`en1` names; Ethernet may remain connected.
-
-### `rfkill: Operation not permitted`
-
-- Run with sufficient privileges or use the `nmcli` path instead.
-
-### Packaging: `electron-builder` fails on Linux
-
-- Install build tools for your distro (e.g. `fakeroot`, `rpm` for some targets). Start with `npm run build:desktop` to validate compilation before `npm run package:desktop`.
-
-### Code signing / Gatekeeper (macOS)
-
-- This repository does not configure Apple notarization. For distribution outside your machine, follow Apple’s signing and notarization guides and update `electron-builder` mac settings.
-
-### CSP / fonts in renderer
-
-- The renderer allows Google Fonts in `index.html` CSP. For air-gapped builds, remove the `@import` from `desktop/src/renderer/src/style.css` and rely on system fonts only.
+During `electron-vite dev`, protocol registration may point at the wrong executable. Use packaged builds for handler testing, or manually re-register the `magnet` association.
 
 ---
 
-## CI (GitHub Actions)
+## Proxy / Tor
 
-### Website build fails: lockfile missing
+### Local HTTP proxy fails immediately
 
-- Commit `package-lock.json` files generated by `npm install` at the repo root (workspaces create a root lockfile).
+Tor must be listening on the configured SOCKS port (default **9050**). KillNode waits for that port to accept TCP before starting the HTTP bridge; if startup still fails, confirm Tor logs and firewall rules.
 
-### Desktop build fails on Ubuntu
+### SOCKS5 ingress hangs
 
-- Some native modules may need build essentials: `sudo apt-get install -y build-essential python3`.
+The minimal SOCKS5 parser expects reasonably framed packets; exotic clients may require buffering upgrades. For maximum compatibility, point SOCKS clients directly at Tor’s port **9050** instead of **9741**.
 
----
+### Electron session not proxied
 
-## Tor / network
-
-### No traffic through SOCKS
-
-- Confirm Tor is **ACTIVE** in KillNode and that your application is configured for **SOCKS5** to `127.0.0.1:9050`.
-- DNS leaks: prefer applications with SOCKS5 remote DNS or use Tor Browser.
-
-### Exit country not respected
-
-- Tor may fail to honor strict exit selection if no matching exits exist; see Tor manual for `StrictNodes` (this build uses `StrictNodes 0`).
+`session.defaultSession.setProxy` runs only **after** Tor’s SOCKS port is reachable **and** the HTTP bridge on **9742** accepts connections. Check the in-app log after **Activate Tor**.
 
 ---
 
-## Still stuck?
+## Neural killswitch — Linux / Kali
 
-1. Re-read [USAGE.md](./USAGE.md) for the feature path you are using.
-2. Search issues on your GitHub repository (once published).
-3. For **security-sensitive** bugs, use GitHub **Security Advisories** rather than public issues.
+### `nmcli networking off` permission denied
+
+NetworkManager and some `ip link` operations need privileges. Options:
+
+- Run KillNode with **sudo** (only where authorized), or
+- Use **polkit** rules for `nmcli`, or
+- Grant the packaged binary **Linux capabilities** so interface operations work **without** full root at runtime (see below).
+
+### `cap_net_admin` on the KillNode binary (no full sudo at runtime)
+
+If your killswitch uses `ip link set … down` / similar, you can attach **`CAP_NET_ADMIN`** to the Electron/KillNode binary so a normal user session can bring interfaces down (still a powerful capability—use only on dedicated test machines).
+
+Example (adjust paths to your installed `KillNode` or `AppImage` extracted binary):
+
+```bash
+# Find the main executable (AppImage: extract with --appimage-extract, then use AppRun or chrome-sandbox sibling paths as appropriate)
+sudo setcap cap_net_admin+eip /opt/KillNode/killnode
+
+# Verify
+getcap /opt/KillNode/killnode
+```
+
+Notes:
+
+- **AppImage** sandboxes may block `setcap` on the mount; you may need a **installed** `.deb` or unpacked directory on a normal filesystem.
+- **`cap_net_admin`** allows network stack changes; it is **not** a substitute for authorization to isolate a network you do not own.
+- If `setcap` fails with “Operation not supported”, the filesystem may be `nosuid`/`noexec` (e.g. some live USB layouts)—install to `ext4` on disk.
+
+### `rfkill` path fails
+
+Install `rfkill` or rely on `nmcli`. Some hardware killswitches are firmware-gated and cannot be toggled from userspace.
+
+### I bricked my networking
+
+Use another interface, physical console, or recovery mode. The in-app **Restore hint** prints generic recovery commands (`nmcli networking on`, `ip link set … up`, etc.).
+
+---
+
+## CI
+
+### Website job cannot find database
+
+`ci.yml` creates `website/data` before `prisma migrate deploy`. The schema URL points at `file:../data/killnode.db`; no `DATABASE_URL` env var is required for the website package.
+
+### Release uploads empty archives
+
+Confirm `npm run package --workspace=desktop` succeeded on that runner and that `desktop/release/*` contains the expected `.exe`, `.AppImage`, or `.dmg`.
+
+---
+
+Still stuck? Re-read [USAGE.md](./USAGE.md) and verify your threat model matches what KillNode actually implements—not what you wish it implemented.

@@ -1,10 +1,27 @@
 import { NextResponse } from "next/server";
 import { requireAdminCookie } from "@/lib/api-auth";
-import { readPosts, writePosts, slugify, type BlogPost } from "@/lib/posts";
+import { prisma } from "@/lib/db";
+import { slugify, type BlogPost } from "@/lib/posts";
+
+function serialize(row: {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  createdAt: Date;
+}): BlogPost {
+  return {
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    content: row.content,
+    date: row.createdAt.toISOString(),
+  };
+}
 
 export async function GET() {
-  const posts = await readPosts();
-  return NextResponse.json(posts);
+  const rows = await prisma.post.findMany({ orderBy: { createdAt: "desc" } });
+  return NextResponse.json(rows.map(serialize));
 }
 
 export async function POST(request: Request) {
@@ -24,18 +41,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Title required" }, { status: 400 });
   }
   const slug = (body.slug?.trim() || slugify(title)).toLowerCase();
-  const posts = await readPosts();
-  if (posts.some((p) => p.slug === slug)) {
+  const exists = await prisma.post.findUnique({ where: { slug } });
+  if (exists) {
     return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
   }
-  const post: BlogPost = {
-    slug,
-    title,
-    excerpt,
-    content,
-    date: new Date().toISOString(),
-  };
-  posts.push(post);
-  await writePosts(posts);
-  return NextResponse.json(post, { status: 201 });
+  const row = await prisma.post.create({
+    data: { slug, title, excerpt, content },
+  });
+  return NextResponse.json(serialize(row), { status: 201 });
 }

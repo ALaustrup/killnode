@@ -1,106 +1,90 @@
-# KillNode — Usage Guide
+# KillNode — Usage (Operator Manual)
 
-This guide explains how to use every major feature of the **KillNode website** and **KillNode desktop** application. Read [LEGAL_AND_ETHICS.md](./LEGAL_AND_ETHICS.md) first; use only on systems and networks you are authorized to control.
+Operate KillNode only on systems and networks you **own** or are **explicitly authorized** to reconfigure. Read [LEGAL_AND_ETHICS.md](./LEGAL_AND_ETHICS.md) first.
 
 ---
 
 ## Website
 
-### Landing page (`/`)
+### Blog & admin (Prisma / SQLite)
 
-- **Neural logo:** Animated SVG node; purely decorative branding.
-- **Download KillNode:** Points to GitHub Releases (configure your repo URL in `website/src/app/page.tsx` if needed).
-- **Blog** and **Operator console** shortcuts appear in the lower grid.
+- Public blog: `/blog` backed by SQLite (`DATABASE_URL`, default `file:./data/killnode.db` under `website/`).
+- Admin: `/admin` (JWT cookie). Defaults: `admin` / `killnode2026` — override with env vars. **Production** requires `ADMIN_SESSION_SECRET` (16+ chars) and HTTPS.
 
-### Blog (`/blog` and `/blog/[slug]`)
+### Dynamic downloads
 
-- Public index lists posts from `website/data/posts.json`, newest first.
-- Post pages support a **lightweight markup** convention:
-  - Paragraphs separated by a blank line
-  - `**bold**` for emphasis
-  - Lines starting with `>` render as block quotes
+The landing page pulls **latest GitHub Release** metadata via `GET /api/releases/latest`. Configure:
 
-### Admin dashboard (`/admin`)
-
-1. Sign in at `/admin/login` with credentials from environment variables or demo defaults (see root `README.md`).
-2. **Dashboard** lists posts with an **Edit** action.
-3. **New post** (`/admin/posts/new`): title, optional slug, excerpt, body.
-4. **Edit** (`/admin/posts/[slug]/edit`): update fields or **Delete** the post.
-5. **Log out** clears the HTTP-only session cookie.
-
-**Production checklist**
-
-- Set `ADMIN_SESSION_SECRET` (16+ characters).
-- Use HTTPS so session cookies are marked `Secure`.
-- Change default username/password.
+- `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME`
+- Optional `GITHUB_TOKEN` (server-side, never exposed to the client)
 
 ---
 
-## Desktop application
+## Desktop — Tor & proxy mesh
 
-### First launch
+### Activation sequence
 
-1. Install dependencies and run `npm run dev:desktop` (development) or install a packaged build from `desktop/release/` (after `npm run package:desktop`).
-2. If **Tor** does not start, either:
-   - Install system Tor (`apt install tor` on Debian/Kali/Ubuntu), or
-   - Copy Tor Expert Bundle files into `desktop/resources/tor/` as described in `desktop/resources/tor/README.md`, or
-   - Use **Browse…** to select a `tor` / `tor.exe` binary.
-
-### System tray
-
-- **Close** the main window: the app **hides** to the tray (background execution).
-- **Show KillNode** / tray icon click: restores the window.
-- **Quit** exits the process and stops the bundled Tor child (if running).
-
-### Tor — one-click activation
-
-- **Activate Tor** writes a minimal `torrc` under the app user data directory (SOCKS default **9050**, ControlPort **9051** with cookie auth) and spawns the Tor binary.
-- **Stop** sends SIGTERM to the child process.
-- Status reads **TOR · ACTIVE** / **TOR · OFFLINE** in the header.
-
-Changing **exit region** or **Ghost mode** affects the next successful **Activate** (stop then start if Tor is already running).
+1. **Activate Tor** — writes `torrc.killnode` under Electron `userData`, spawns Tor (SOCKS default **9050**).
+2. **Obfuscation bridge (optional)** — if enabled in settings, attempts to spawn **Shadowsocks** (`-c <json>`) and/or **V2Ray** (`run -c <json>`) using **paths you provide**. Binaries are **not** shipped with KillNode.
+3. **Local mesh** — starts:
+   - **HTTP proxy** on **9742** (`proxy-chain` → `socks5://127.0.0.1:<tor>`)
+   - **SOCKS5 ingress** on **9741** (minimal gateway → Tor SOCKS for outbound TCP connects)
+4. **`session.defaultSession.setProxy`** — Electron’s default session is pointed at `http=127.0.0.1:9742` for renderer navigations.
 
 ### Ghost mode
 
-- Toggles **faster circuit rotation** via Tor `MaxCircuitDirtiness` (45s vs 60s default in this build).
-- **Rotating proxies** are not injected automatically: point external tools at `127.0.0.1:9050` (SOCKS5) or configure system/proxy environment variables yourself. Document your proxy provider’s rules and legality.
+Tightens Tor `MaxCircuitDirtiness` (45s vs 60s). Restart Tor after toggling if you need a clean torrc application.
 
-### Location spoofing selector
+### SOCKS vs HTTP for other apps
 
-- The **Exit region hint** maps to Tor `ExitNodes` country groups (see `desktop/src/main/index.ts` for the exact `{cc}` sets).
-- This influences **exit geography**, not GPS on your machine. It is not a substitute for compliance, threat modeling, or lawful use.
-
-### Neural Killswitch
-
-- Attempts **host-level network isolation** using platform-specific commands (see `desktop/src/main/network-killswitch.ts`).
-- A confirmation dialog appears before execution.
-- **Restore hint** prints generic recovery commands; you may need **Administrator** (Windows) or **root/polkit** (Linux).
-
-### Onion link generator
-
-- **Generate & copy** produces a **simulated** `.onion` URL (v3-style appearance) and copies it to the clipboard.
-- After **60 seconds** the on-screen value is scrubbed (self-destructing display).
-- **Real** onion services require Tor hidden service configuration; this tool does not publish a live HS for you.
-
-### Preferences persistence
-
-- Stored in `killnode-settings.json` under the app’s Electron `userData` path (OS-specific).
+- **HTTP-aware clients:** `http://127.0.0.1:9742`
+- **Native SOCKS clients:** `socks5://127.0.0.1:9741` (ingress) **or** directly `socks5://127.0.0.1:9050` once Tor is up.
 
 ---
 
-## SOCKS and browser integration
+## Desktop — Neural killswitch
 
-Point a SOCKS5-capable browser or profile to:
+Confirms, then executes **in order**:
 
-- **Host:** `127.0.0.1`
-- **Port:** `9050` (unless you change the desktop Tor defaults in code)
-
-Use **Tor Browser** for the strongest out-of-the-box defaults when anonymity is the goal.
+1. Stop torrent telemetry loop and **destroy WebTorrent**.
+2. **Stop local proxy stack** (HTTP + SOCKS ingress) and clear Electron session proxy rules.
+3. **Stop obfuscation children** (SS / V2Ray).
+4. **Stop Tor** and **SIGKILL** any remaining managed child processes.
+5. **Host network severance** (platform-specific — see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)).
 
 ---
 
-## Where to go next
+## Desktop — Secure swarm (WebTorrent)
 
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — when builds or networking fail
-- [LEGAL_AND_ETHICS.md](./LEGAL_AND_ETHICS.md) — liability, ethics, terms
-- [docs/README.md](./docs/README.md) — documentation index
+### Threat model (read carefully)
+
+- WebTorrent runs in the **main** process with `utp`, `dht`, `lsd`, and `webSeeds` disabled to shrink the UDP/WebRTC surface.
+- When Tor is active, the client passes `proxy: socks5://127.0.0.1:<tor>` for **library HTTP** paths (trackers, metadata). **Peer wire** remains TCP-heavy; this is **not** equivalent to Tor Browser’s anonymity guarantees.
+
+### Magnet ingestion
+
+- Paste a magnet URI and **Add magnet**, or open a `magnet:` link (OS handler / second-instance argv).
+- Payloads download under `userData/torrents`.
+
+### Seeding & drag/drop
+
+- **Seed files…** opens a multi-select dialog.
+- **Drop files** onto the swarm card — paths are resolved via `webUtils.getPathForFile` in the preload bridge.
+
+### Telemetry
+
+Blood-red / cyan table shows download/upload throughput, peers, ratio. Updates push over IPC every second while the window exists.
+
+---
+
+## Desktop — SQLite (settings & jobs)
+
+Key/value settings and torrent job rows live in `killnode.db` inside Electron `userData`. There is no remote sync — backup that file if you care about the metadata.
+
+---
+
+## Where next
+
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+- [PHASED_DEVELOPMENT.md](./PHASED_DEVELOPMENT.md)
+- [docs/README.md](./docs/README.md)

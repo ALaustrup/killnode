@@ -3,12 +3,18 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "prisma generate && next dev",
+    "build": "prisma generate && prisma migrate deploy && prisma db seed && node scripts/run-next-build.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.3.0",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.0",
@@ -22,6 +28,8 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "prisma": "^6.3.0",
+    "tsx": "^4.19.2",
     "@eslint/eslintrc": "^3.2.0",
     "autoprefixer": "^10.4.20",
     "@types/node": "^22.9.0",

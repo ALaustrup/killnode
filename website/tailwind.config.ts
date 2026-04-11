@@ -40,8 +40,8 @@ const config: Config = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         neon: {
-          red: "#ff003c",
-          cyan: "#00f0ff",
+          red: "#ff0000",
+          cyan: "#00ffff",
           dim: "#1a1a1f",
         },
       },

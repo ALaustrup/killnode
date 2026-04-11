@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { NeuralLogo } from "@/components/neural-logo";
-import { Button } from "@/components/ui/button";
+import { DownloadReleases } from "@/components/download-releases";
 
 export default function HomePage() {
   return (
@@ -21,17 +21,14 @@ export default function HomePage() {
           demand control.
         </p>
         <div id="download" className="mt-12 flex flex-col items-center gap-4 scroll-mt-24">
-          <Button variant="cta" size="lg" asChild>
-            <a href="https://github.com/Alaustrup/killnode/releases" rel="noopener noreferrer">
-              Download KillNode
-            </a>
-          </Button>
+          <DownloadReleases />
           <p className="max-w-md text-xs text-muted-foreground">
-            Desktop builds ship from the releases page after you run{" "}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-neon-cyan/90">
+            Builds are produced by CI on tags and{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[#00FFFF]/90">
               npm run package --workspace=desktop
             </code>
-            . See the root <code className="font-mono">README.md</code>.
+            . Configure <code className="font-mono">GITHUB_REPO_*</code> in{" "}
+            <code className="font-mono">website/.env</code>.
           </p>
         </div>
         <div className="mt-16 grid w-full max-w-lg gap-4 border border-neon-red/20 bg-card/40 p-6 font-mono text-xs text-muted-foreground md:grid-cols-2">

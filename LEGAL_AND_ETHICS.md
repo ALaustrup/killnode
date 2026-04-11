@@ -6,12 +6,17 @@
 
 ---
 
+## Read this first (plain language)
+
+**Do not use KillNode for malicious, illegal, or unauthorized activities.** Even when the software could be misused, you must not. The maintainers are **not responsible or liable** for what you do with it, for any harm that results, or for any legal consequences—**period**. The formal sections below restate this in legal language; if anything seems unclear, the rule is still: lawful, authorized use only.
+
+---
+
 ## Ethical Usage Agreement
 
 KillNode is provided for **legitimate privacy research, network administration, personal security hardening, and lawful operational use** only.
 
-**You must not use this software for malicious, illegal, or unauthorized activities.**  
-**Do not use this software for malicious, illegal, or unauthorized activities.** The developers and creators of KillNode are strictly not responsible nor liable for any actions taken by the user, nor any consequences, damages, or legal issues that arise from the use of this software, no matter what.
+**You must not use this software for malicious, illegal, or unauthorized activities.**
 
 By downloading, building, installing, or using KillNode in any form, you agree that:
 
@@ -45,13 +50,14 @@ TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE DEVELOPERS AND CONTRIBUTORS OF KILLN
 
 When you deploy the included Next.js site yourself:
 
-- **Blog content** is stored as you configure it (default demo uses a JSON data file on the server filesystem).
+- **Blog content** is stored in **SQLite** via **Prisma** (see `website/prisma/schema.prisma`) at `website/data/killnode.db` (path fixed in the schema as `file:../data/killnode.db` relative to the `prisma/` directory).
 - **Admin authentication** uses an HTTP-only session cookie; credentials must be set via environment variables in production. The default demo credentials are **not** safe for public deployment.
 - No third-party analytics are included by default. If you add analytics, you must disclose that separately.
 
 ### Data collected by the KillNode desktop application
 
-- The desktop client may store **local preferences** (for example, UI state, selected region, Tor paths) on your machine.
+- The desktop client persists **settings and torrent job metadata** in a **SQLite** database under the Electron **userData** directory (`killnode.db`), accessed through **Prisma** (`desktop/prisma/schema.prisma`).
+- **Downloaded torrent payload bytes** are written under `userData/torrents` when you use the swarm engine.
 - **Tor and proxy traffic** is handled by Tor and your system network stack; this project does not operate a central telemetry server by default.
 - Crash logs or diagnostics are **not** transmitted unless you explicitly integrate such tooling.
 

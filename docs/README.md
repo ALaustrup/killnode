@@ -1,35 +1,22 @@
 # KillNode documentation
 
-Welcome to the documentation hub for **KillNode**. Authoritative legal text and primary guides live at the repository root; this folder provides navigation and supplemental material.
+## Canonical sources (repository root)
 
----
+| Document | Description |
+|----------|-------------|
+| [../README.md](../README.md) | Install, Prisma, CI, packaging |
+| [../USAGE.md](../USAGE.md) | Proxy mesh, killswitch, torrents |
+| [../TROUBLESHOOTING.md](../TROUBLESHOOTING.md) | Prisma, Tor, sudo/Kali, CI |
+| [../LEGAL_AND_ETHICS.md](../LEGAL_AND_ETHICS.md) | Ethics, liability, privacy |
+| [../PHASED_DEVELOPMENT.md](../PHASED_DEVELOPMENT.md) | Roadmap (Phase 3–4 specs) |
+| [../LICENSE](../LICENSE) | OSS license |
 
-## Start here
+## Mirrors in `/docs`
 
-| Document | Path |
-|----------|------|
-| **Setup, build, deploy** | [../README.md](../README.md) |
-| **Feature guide** | [../USAGE.md](../USAGE.md) |
-| **Build & OS fixes** | [../TROUBLESHOOTING.md](../TROUBLESHOOTING.md) |
-| **Legal, ethics, privacy, terms** | [../LEGAL_AND_ETHICS.md](../LEGAL_AND_ETHICS.md) |
-| **License** | [../LICENSE](../LICENSE) |
+The following files are duplicated here for offline bundles:
 
----
+- [USAGE.md](./USAGE.md)
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+- [LEGAL_AND_ETHICS.md](./LEGAL_AND_ETHICS.md)
 
-## Component map
-
-- **Website (`/website`):** Next.js 15 app — landing page, `/blog`, `/admin` with JWT session cookie (`jose`) and JSON post storage.
-- **Desktop (`/desktop`):** Electron + electron-vite — main/preload/renderer architecture; Tor child process; IPC surface documented in `USAGE.md`.
-
----
-
-## Mirrors (optional local copies)
-
-For offline bundles or static site generators, you may copy root markdown into this folder. The GitHub-rendered source of truth remains the root files linked above.
-
----
-
-## Third parties
-
-- **Tor** is distributed separately under its own license. See [https://www.torproject.org/](https://www.torproject.org/).
-- **shadcn/ui** patterns are used in the website under MIT-style licensing of generated components; verify upstream licenses when upgrading.
+When in doubt, the **root** copies win for version control history.
