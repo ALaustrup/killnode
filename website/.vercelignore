@@ -1,0 +1,6 @@
+# Vercel deploys from the website/ directory (Root Directory setting in project).
+# Exclude build-time artefacts that are not needed in the deployed bundle.
+.next-sandbox-home/
+scripts/
+prisma/seed.ts
+data/posts.json
