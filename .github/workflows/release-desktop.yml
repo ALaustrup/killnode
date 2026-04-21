@@ -28,7 +28,6 @@ jobs:
         run: npm ci
       - name: Package KillNode (electron-builder)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # SQLite path required by prisma generate (desktop uses file-based DB)

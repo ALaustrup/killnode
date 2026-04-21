@@ -11,7 +11,7 @@
     "dev": "prisma generate --schema prisma/schema.prisma && electron-vite dev",
     "build": "prisma generate --schema prisma/schema.prisma && electron-vite build",
     "preview": "electron-vite preview",
-    "package": "npm run build && electron-builder",
+    "package": "npm run build && electron-builder --publish never",
     "typecheck": "prisma generate --schema prisma/schema.prisma && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
