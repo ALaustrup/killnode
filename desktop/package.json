@@ -74,12 +74,9 @@
       "maintainer": "Alaustrup <alaustrup@users.noreply.github.com>"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": ["zip"],
       "category": "public.app-category.utilities",
       "artifactName": "${productName}-${version}-mac.${ext}"
-    },
-    "dmg": {
-      "sign": false
     }
   }
 }
