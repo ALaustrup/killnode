@@ -76,7 +76,8 @@
     "mac": {
       "target": ["zip"],
       "category": "public.app-category.utilities",
-      "artifactName": "${productName}-${version}-mac.${ext}"
+      "artifactName": "${productName}-${version}-mac.${ext}",
+      "notarize": false
     }
   }
 }
