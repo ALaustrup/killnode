@@ -3,7 +3,7 @@
   "framework": "nextjs",
 
   "installCommand": "cd .. && npm ci",
-  "buildCommand": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && echo '[1/4] prisma generate...' && npx prisma generate && echo '[2/4] prisma migrate deploy...' && npx prisma migrate deploy && echo '[3/4] prisma db seed...' && npx prisma db seed && echo '[4/4] next build...' && next build",
+  "buildCommand": "npx prisma generate && next build",
   "outputDirectory": ".next",
 
   "env": {

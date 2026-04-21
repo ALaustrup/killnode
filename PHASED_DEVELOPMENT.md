@@ -6,7 +6,7 @@ This document is a **technical north star**, not a delivery promise. Priorities 
 
 ## Phase 0 — Foundation (shipped baseline)
 
-- Next.js 15 website with Prisma/SQLite blog and admin surface.
+- Next.js 15 website with Prisma/PostgreSQL (Neon) blog and admin surface.
 - Electron desktop with Tor orchestration, local HTTP/SOCKS mesh into Tor, optional Shadowsocks/V2Ray child processes, WebTorrent in the **main** process, magnet protocol registration, and a full neural killswitch sequence.
 - GitHub API–driven download matrix on the landing page; CI and tag-based desktop releases.
 
