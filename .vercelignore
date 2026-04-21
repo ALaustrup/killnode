@@ -1,0 +1,31 @@
+# Vercel deploys the website from the monorepo root.
+# Exclude everything that isn't needed for the Next.js website build.
+
+# Desktop app artifacts (large binaries, not needed for website)
+desktop/release/
+desktop/out/
+desktop/dist-electron/
+desktop/build/
+desktop/resources/tor/
+
+# Development / test artifacts
+node_modules/
+.next/
+coverage/
+
+# Electron native modules and Prisma client (regenerated during build)
+website/src/generated/
+desktop/src/main/generated/
+desktop/node_modules/
+
+# Secrets and local env overrides
+.env
+.env.local
+.env.production
+website/.env
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
