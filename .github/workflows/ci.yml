@@ -76,4 +76,6 @@ jobs:
         run: npm run typecheck --workspace=desktop
 
       - name: Build desktop
+        env:
+          DATABASE_URL: "file:./data/desktop.db"
         run: npm run build --workspace=desktop
