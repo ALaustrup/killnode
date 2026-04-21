@@ -12,7 +12,7 @@
     "build": "prisma generate --schema prisma/schema.prisma && electron-vite build",
     "preview": "electron-vite preview",
     "package": "npm run build && electron-builder",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+    "typecheck": "prisma generate --schema prisma/schema.prisma && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
