@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "child_process";
+import { spawn, execSync, type ChildProcess } from "child_process";
 import fs from "fs";
 import path from "path";
 import { app } from "electron";
@@ -14,6 +14,18 @@ function resourcesTorDir(): string {
   return path.join(app.getAppPath(), "resources", "tor");
 }
 
+function findTorInPath(): string | null {
+  try {
+    const cmd = process.platform === "win32" ? "where.exe tor.exe" : "which tor";
+    const result = execSync(cmd, { encoding: "utf8", timeout: 3000 }).trim();
+    const first = result.split(/\r?\n/)[0].trim();
+    if (first && fs.existsSync(first)) return first;
+  } catch {
+    // not in PATH — fall through
+  }
+  return null;
+}
+
 function candidateTorPaths(customPath?: string): string[] {
   const list: string[] = [];
   if (customPath?.trim()) {
@@ -22,10 +34,20 @@ function candidateTorPaths(customPath?: string): string[] {
   const base = resourcesTorDir();
   if (process.platform === "win32") {
     list.push(path.join(base, "tor.exe"));
+    // Tor Browser ships tor.exe in a predictable location on Windows
+    const localApp = process.env["LOCALAPPDATA"] ?? "";
+    const progFiles = process.env["ProgramFiles"] ?? "C:\\Program Files";
+    list.push(
+      path.join(localApp, "Tor Browser", "Browser", "TorBrowser", "Tor", "tor.exe"),
+      path.join(progFiles, "Tor Browser", "Browser", "TorBrowser", "Tor", "tor.exe"),
+    );
   } else {
     list.push(path.join(base, "tor"));
+    list.push("/usr/bin/tor", "/usr/sbin/tor", "/usr/local/bin/tor");
   }
-  list.push("/usr/bin/tor", "/usr/sbin/tor");
+  // Last resort: search PATH
+  const fromPath = findTorInPath();
+  if (fromPath) list.push(fromPath);
   return list;
 }
 
@@ -58,11 +80,11 @@ export async function startTor(options: {
     }
   });
   if (!torPath) {
-    return {
-      ok: false,
-      message:
-        "Tor binary not found. Add Expert Bundle to resources/tor or install system Tor. See resources/tor/README.md",
-    };
+    const isWin = process.platform === "win32";
+    const hint = isWin
+      ? "Download the Tor Expert Bundle from torproject.org and place tor.exe in resources/tor/, or install Tor Browser."
+      : "Run: sudo apt install tor  (Debian/Ubuntu/Kali) or place the binary in resources/tor/.";
+    return { ok: false, message: `Tor binary not found. ${hint}` };
   }
   const dataDir = path.join(app.getPath("userData"), "tor-data");
   fs.mkdirSync(dataDir, { recursive: true });
