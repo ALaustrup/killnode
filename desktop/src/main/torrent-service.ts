@@ -1,16 +1,28 @@
 import path from "node:path";
 import fs from "node:fs";
-import { createRequire } from "node:module";
 import { app, type BrowserWindow } from "electron";
 import { SocksProxyAgent } from "socks-proxy-agent";
-import WebTorrent from "webtorrent";
 import type { PrismaClient } from "./generated/prisma";
 
-const require = createRequire(import.meta.url);
-const magnetDecode = require("magnet-uri") as (uri: string) => {
-  infoHash?: string | Buffer | Uint8Array;
-  name?: string | Buffer;
-};
+// webtorrent v2+ and magnet-uri v7+ are pure ESM — loaded via dynamic import()
+// so Rollup emits import() (not require()) in the CJS bundle, which Node 22 handles natively.
+type MagnetDecoder = (uri: string) => { infoHash?: string | Buffer | Uint8Array; name?: string | Buffer };
+let _WebTorrent: (new (...args: unknown[]) => unknown) | null = null;
+let _magnetDecode: MagnetDecoder | null = null;
+
+async function getWebTorrent() {
+  if (!_WebTorrent) {
+    _WebTorrent = ((await import("webtorrent")) as { default: typeof _WebTorrent }).default;
+  }
+  return _WebTorrent!;
+}
+
+async function getMagnetDecode(): Promise<MagnetDecoder> {
+  if (!_magnetDecode) {
+    _magnetDecode = ((await import("magnet-uri")) as { default: MagnetDecoder }).default;
+  }
+  return _magnetDecode!;
+}
 
 // WebTorrent ships without TypeScript declarations; see webtorrent.d.ts.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,14 +55,15 @@ function buildTrackerProxyOpts(proxyUrl?: string): Record<string, unknown> {
   };
 }
 
-function getOrCreateClient(proxy?: string): any {
+async function getOrCreateClient(proxy?: string): Promise<any> {
   if (client && proxy !== currentProxy) {
     client.destroy();
     client = null;
   }
   currentProxy = proxy;
   if (!client) {
-    client = new WebTorrent({
+    const WebTorrent = await getWebTorrent();
+    client = new (WebTorrent as any)({
       utp: false,
       dht: false,
       lsd: false,
@@ -143,6 +156,7 @@ export async function addMagnetFromUri(
   magnetLink: string,
   proxy?: string
 ): Promise<{ ok: boolean; message: string; infoHash?: string }> {
+  const magnetDecode = await getMagnetDecode();
   const parsed = magnetDecode(magnetLink);
   const infoHash = infoHashHex(parsed);
   if (!infoHash) {
@@ -150,7 +164,7 @@ export async function addMagnetFromUri(
   }
   const dir = path.join(app.getPath("userData"), "torrents");
   fs.mkdirSync(dir, { recursive: true });
-  const wt = getOrCreateClient(proxy);
+  const wt = await getOrCreateClient(proxy);
   if (wt.get(infoHash)) {
     return { ok: true, message: "Torrent already active.", infoHash };
   }
@@ -184,7 +198,7 @@ export async function seedPaths(
   }
   const dir = path.join(app.getPath("userData"), "torrents");
   fs.mkdirSync(dir, { recursive: true });
-  const wt = getOrCreateClient(proxy);
+  const wt = await getOrCreateClient(proxy);
   return await new Promise((resolve) => {
     let settled = false;
     wt.seed(
