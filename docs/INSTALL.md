@@ -147,41 +147,27 @@ sudo setcap cap_net_admin+eip /opt/KillNode/killnode
 
 ---
 
-## 5. Tor Binary Setup
+## 5. Tor — Already Included
 
-KillNode manages its own Tor process. It looks for the binary in this order:
+**The installer ships with Tor pre-bundled.** No separate Tor installation is required.
 
-1. `<app resources>/tor/tor` (Windows: `…/tor/tor.exe`)
-2. System `tor` in `PATH`
+The Tor Expert Bundle (v15.0.9, tor 0.4.9.5) is downloaded from the official Tor Project servers, SHA256-verified, and embedded in the installer at build time. You can audit the process in [`desktop/scripts/download-tor.mjs`](../desktop/scripts/download-tor.mjs).
 
-### Option A — Use system Tor (Linux, simplest)
+### v0.1.0-alpha only — manual Tor setup required
 
+The alpha release did not yet include a bundled Tor binary. If you are on the alpha, use one of these options:
+
+**Option A — Install Tor Browser** (Windows, quickest)
+Install [Tor Browser](https://www.torproject.org/download/) — KillNode will automatically find its bundled `tor.exe` at `%LOCALAPPDATA%\Tor Browser\Browser\TorBrowser\Tor\tor.exe`.
+
+**Option B — System Tor** (Linux)
 ```bash
-# Debian / Ubuntu / Kali
-sudo apt-get install tor
-
-# Arch
-sudo pacman -S tor
+sudo apt-get install tor   # Debian / Ubuntu / Kali
 ```
+Do **not** start the `tor.service` — KillNode spawns its own instance with a custom `torrc`.
 
-KillNode will find `tor` in `PATH` automatically. Do **not** start the system `tor` service (`sudo systemctl disable --now tor`) — KillNode spawns its own instance with a custom `torrc`.
-
-### Option B — Tor Expert Bundle (Windows / portable Linux)
-
-1. Download the **Tor Expert Bundle** for your platform from [torproject.org/download/tor](https://www.torproject.org/download/tor/).
-2. Extract it.
-3. Copy the `tor` (or `tor.exe`) binary and any required libraries (e.g., `libcrypto`, `libssl`) into the `resources/tor/` directory inside the KillNode installation folder:
-
-```
-<KillNode install dir>/
-└── resources/
-    └── tor/
-        ├── tor.exe          (Windows)
-        └── tor              (Linux)
-```
-
-> On Windows this is typically `C:\Program Files\KillNode\resources\tor\`.
-> On Linux (AppImage), it is `./squashfs-root/resources/tor/`.
+**Option C — Tor Expert Bundle** (manual, any platform)
+Download the [Tor Expert Bundle](https://www.torproject.org/download/tor/), extract it, and copy all files into `resources/tor/` inside the KillNode installation directory.
 
 ---
 

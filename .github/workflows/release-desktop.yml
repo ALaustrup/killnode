@@ -30,6 +30,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Download & verify Tor Expert Bundle
+        working-directory: desktop
+        env:
+          FORCE_TOR_DOWNLOAD: "1"
+        run: node scripts/download-tor.mjs
+
       - name: Package KillNode (electron-builder)
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
@@ -37,7 +43,7 @@ jobs:
           # SQLite path required by prisma generate (desktop uses file-based DB)
           DATABASE_URL: "file:./data/desktop.db"
         working-directory: desktop
-        run: npm run package
+        run: npm run build && electron-builder --publish never
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
