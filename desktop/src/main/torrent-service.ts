@@ -6,7 +6,9 @@ import type { PrismaClient } from "./generated/prisma";
 
 // webtorrent v2+ and magnet-uri v7+ are pure ESM — loaded via dynamic import()
 // so Rollup emits import() (not require()) in the CJS bundle, which Node 22 handles natively.
-type MagnetDecoder = (uri: string) => { infoHash?: string | Buffer | Uint8Array; name?: string | Buffer };
+import type magnetUriDefault from "magnet-uri";
+type MagnetDecoder = typeof magnetUriDefault;
+
 let _WebTorrent: (new (...args: unknown[]) => unknown) | null = null;
 let _magnetDecode: MagnetDecoder | null = null;
 
@@ -19,7 +21,8 @@ async function getWebTorrent() {
 
 async function getMagnetDecode(): Promise<MagnetDecoder> {
   if (!_magnetDecode) {
-    _magnetDecode = ((await import("magnet-uri")) as { default: MagnetDecoder }).default;
+    const mod = await import("magnet-uri");
+    _magnetDecode = (mod.default ?? mod) as MagnetDecoder;
   }
   return _magnetDecode!;
 }
@@ -29,7 +32,7 @@ async function getMagnetDecode(): Promise<MagnetDecoder> {
 let client: any = null;
 let currentProxy: string | undefined;
 
-function infoHashHex(parsed: ReturnType<typeof magnetDecode>): string | null {
+function infoHashHex(parsed: ReturnType<MagnetDecoder>): string | null {
   const ih = parsed.infoHash as string | Buffer | Uint8Array | undefined;
   if (!ih) return null;
   if (typeof ih === "string") return ih.toLowerCase();
