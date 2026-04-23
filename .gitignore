@@ -61,3 +61,4 @@ website/prisma/**/*.db-journal
 # Desktop dev SQLite
 desktop/data/*.db
 desktop/data/*.db-journal
+.vercel

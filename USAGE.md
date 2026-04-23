@@ -37,7 +37,7 @@ When KillNode starts for the first time it:
 3. Loads saved settings (proxy ports, Ghost mode toggle, obfuscation paths) from the last session.
 4. Sits in the **system tray** until you open the main window.
 
-**You do not need Tor pre-installed.** KillNode manages its own Tor process using the binary you place under `resources/tor/` in the installation directory (or a system `tor` on Linux). See [docs/INSTALL.md](./docs/INSTALL.md) for how to obtain the Tor binary.
+**Tor is pre-bundled in the installer** — no separate Tor installation is needed. KillNode manages its own Tor process using the verified Tor Expert Bundle (v15.0.9, tor 0.4.9.5) that ships inside `resources/tor/`. If you are running a dev build from source, see [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md#tor-in-dev-mode) for how to set up the Tor binary locally.
 
 ---
 

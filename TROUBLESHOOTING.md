@@ -88,19 +88,26 @@ The Prisma client was not bundled correctly.
 
 ### App launches but Tor button does nothing
 
-Tor binary not found. KillNode looks for it at:
-1. `<app resources>/tor/tor` (or `tor.exe` on Windows) — provided via `resources/tor/` at build time.
-2. System `tor` in `PATH`.
+**Packaged installers (v0.2.0+) include Tor.** If you see "Tor binary not found" with a packaged install, the installation may be corrupt — reinstall.
 
-**Fix:** Place the Tor Expert Bundle binary in the `resources/tor/` directory of the installed app, or install `tor` system-wide:
+**Dev builds from source** do not include Tor automatically. Run the download script once:
 
 ```bash
-# Ubuntu / Debian
-sudo apt-get install tor
-
-# Arch
-sudo pacman -S tor
+# From desktop/ — downloads Tor Expert Bundle v15.0.9 and places it in resources/tor/
+node scripts/download-tor.mjs
 ```
+
+KillNode searches for the binary in this order:
+1. `<app resources>/tor/tor.exe` (Windows) / `tor` (Linux/macOS) — bundled at packaging time
+2. Tor Browser's `tor.exe` at `%LOCALAPPDATA%\Tor Browser\Browser\TorBrowser\Tor\tor.exe` (Windows)
+3. System `tor` in `PATH` (`/usr/bin/tor`, `/usr/sbin/tor`, `/usr/local/bin/tor`)
+
+**Linux system Tor fallback:**
+```bash
+sudo apt-get install tor   # Debian / Ubuntu / Kali
+sudo pacman -S tor          # Arch
+```
+Do **not** start the `tor.service` — KillNode spawns its own instance with a custom `torrc`.
 
 ---
 

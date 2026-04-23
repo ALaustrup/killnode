@@ -134,7 +134,16 @@ The SQLite database is created automatically on first launch inside Electron's `
 
 ### Tor in dev mode
 
-Place the Tor binary in `desktop/resources/tor/` or install system Tor (`apt-get install tor` / `brew install tor`). KillNode's Tor manager will find it automatically.
+The download script fetches, verifies (SHA256), and extracts the Tor Expert Bundle automatically:
+
+```bash
+# Run once from desktop/ — places tor.exe / tor in resources/tor/
+node scripts/download-tor.mjs
+```
+
+The script skips the download if the binary already exists (fast-path). Set `FORCE_TOR_DOWNLOAD=1` to re-download. The binary is gitignored — each developer runs the script once.
+
+Alternatively, install system Tor (`sudo apt-get install tor`) or Tor Browser — KillNode's path search will find either.
 
 ---
 
@@ -157,9 +166,14 @@ npm run build:desktop    # prisma generate + electron-vite build
 ### Desktop package (with installer)
 
 ```bash
-npm run package:desktop  # build + electron-builder --publish never
+npm run package:desktop  # downloads + verifies Tor, builds, packages with electron-builder
                          # output: desktop/release/
 ```
+
+The `package` script runs three steps in order:
+1. `node scripts/download-tor.mjs` — fetches and SHA256-verifies the Tor Expert Bundle
+2. `npm run build` — Prisma generate + electron-vite build
+3. `electron-builder --publish never` — creates platform installers
 
 Artifacts:
 - `desktop/release/KillNode-*-win.exe` — Windows NSIS installer

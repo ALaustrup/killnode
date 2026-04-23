@@ -302,10 +302,15 @@ npm run build:desktop
         └── copyDesktopPrismaClient plugin: src/main/generated → out/main/generated
 
 npm run package:desktop
+  └── node scripts/download-tor.mjs
+        ├── Detects platform (win32 / linux / darwin)
+        ├── Downloads Tor Expert Bundle v15.0.9 from torproject.org mirror chain
+        ├── Verifies SHA256 against known checksum — aborts on mismatch
+        └── Extracts to desktop/resources/tor/  (gitignored)
   └── npm run build:desktop
   └── electron-builder --publish never
-        ├── Windows: NSIS installer + ZIP
-        ├── Linux: AppImage + .deb
+        ├── Windows: NSIS installer + ZIP  (includes resources/tor/tor.exe)
+        ├── Linux: AppImage + .deb         (includes resources/tor/tor)
         └── Output: desktop/release/
 ```
 

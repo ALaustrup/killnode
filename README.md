@@ -34,7 +34,7 @@ For step-by-step installation instructions see **[docs/INSTALL.md](./docs/INSTAL
 
 ## Features
 
-- **Tor integration** — spawns and manages a local Tor process; routes the Electron session through it automatically.
+- **Tor integration** — Tor Expert Bundle (v15.0.9) is **pre-bundled** in the installer; no separate Tor installation needed. KillNode spawns and manages the Tor process and routes the Electron session through it automatically.
 - **HTTP proxy bridge** — `proxy-chain` HTTP proxy on port **9742** forwarding to Tor's SOCKS port, usable by any HTTP-aware application.
 - **SOCKS5 ingress** — minimal SOCKS5 gateway on port **9741** for native SOCKS clients.
 - **Ghost mode** — tightened circuit-dirtiness settings for more aggressive circuit rotation.
