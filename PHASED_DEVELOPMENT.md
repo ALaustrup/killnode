@@ -4,28 +4,35 @@ This document is a **technical north star**, not a delivery promise. Priorities 
 
 ---
 
-## Phase 0 — Foundation (shipped baseline)
+## Phase 0 — Foundation ✓ shipped
 
-- Next.js 15 website with Prisma/PostgreSQL (Neon) blog and admin surface.
-- Electron desktop with Tor orchestration, local HTTP/SOCKS mesh into Tor, optional Shadowsocks/V2Ray child processes, WebTorrent in the **main** process, magnet protocol registration, and a full neural killswitch sequence.
-- GitHub API–driven download matrix on the landing page; CI and tag-based desktop releases.
-
----
-
-## Phase 1 — Hardening & operator ergonomics
-
-- **IPC surface audit:** expand automated tests around channel allow-lists and malformed payloads.
-- **Proxy correctness:** richer SOCKS5 ingress buffering, structured logging for proxy-chain upstream failures, and explicit UI warnings when Tor is offline.
-- **Torrent threat model:** configurable blocklists, optional tracker-only mode, and clearer UX around residual clearnet exposure (peer wire vs tracker HTTP).
-- **Database migrations:** evolve desktop bootstrap DDL with version pins or ship Prisma migrate artifacts for packaged upgrades.
+- Next.js 15 website with Prisma/PostgreSQL (Neon) blog, admin surface, and GitHub API download matrix.
+- Electron desktop with basic Tor process management, local HTTP/SOCKS mesh, and neural killswitch.
+- CI and tag-based desktop releases via GitHub Actions.
 
 ---
 
-## Phase 2 — Distribution & compliance
+## Phase 1 — Hardening ✓ shipped (v1.0.1 Alpha)
 
-- Optional **Apple notarization** pipeline (separate from code signing) with hardened runtime entitlements when distributing outside ad-hoc channels.
-- SBOM generation for desktop releases; reproducible build notes for Linux (Kali/Debian) operators.
-- Signed update channel (e.g., electron-updater) with key management guidance.
+- **Real Tor control-port integration:** cookie auth on port 9051; `SIGNAL NEWNYM`, live bootstrap progress (0–100%), live circuit count.
+- **Pluggable Transports (obfs4 / lyrebird):** bundled in the Tor Expert Bundle — no extra binary needed. Bridge lines pasted from bridges.torproject.org via the desktop UI.
+- **Hardened SOCKS5 gateway:** buffered reads, IPv6 (atyp 0x04), proper error reply codes.
+- **Dead-man killswitch timer:** optional auto-fire (30 s / 60 s / 120 s / 5 min) on unexpected Tor exit.
+- **Dirty-shutdown detection:** warns on next launch if Tor was active during an unclean exit.
+- **Tor Expert Bundle bundled** in the installer — no separate Tor installation needed.
+- **Database:** removed `TorrentJob` model; stripped WebTorrent, Onion Synth, and Shadowsocks/V2Ray sidecars.
+
+---
+
+## Phase 2 — Web Proxy Browser ✓ shipped (v1.0.1 Alpha)
+
+- **Server-side proxy browser at `/browse`:** routes all requests through Vercel's servers; your ISP only sees traffic to `killnode.vercel.app`.
+- **Comprehensive URL rewriting:** HTML attributes (`href`, `src`, `action`, `srcset`, `data-src`, lazy-loading data-*), inline CSS `url()`, CSS `@import`, meta-refresh.
+- **Dynamic JS interception:** patched `window.fetch`, `XMLHttpRequest`, `HTMLImageElement.src`, `Element.setAttribute`, and `window.open`; plus a `MutationObserver` that catches runtime DOM mutations.
+- **Injected navigation bar:** persistent URL input, Back, Forward, and return link on every proxied page.
+- **SSRF protection:** blocks loopback, private RFC-1918 ranges, link-local, AWS metadata, `.local`/`.internal`.
+- **Blog post sync:** `readPosts()` merges `data/posts.json` with DB at read time — posts always appear without a seed step.
+- Optional Apple notarization and signed update channel (electron-updater) deferred to Phase 3.
 
 ---
 

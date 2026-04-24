@@ -29,7 +29,12 @@ function pickPrimary(assets: Asset[]): Asset | undefined {
   return assets[0];
 }
 
-export function DownloadReleases() {
+interface DownloadReleasesProps {
+  /** Override the displayed version label (defaults to GitHub release tag) */
+  version?: string;
+}
+
+export function DownloadReleases({ version }: DownloadReleasesProps) {
   const [data, setData] = useState<Payload | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +71,12 @@ export function DownloadReleases() {
   if (err || !data) {
     return (
       <div className="flex w-full max-w-md flex-col items-center gap-3 text-center">
-        <p className="font-mono text-xs text-neon-red/80">
+        {version && (
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-neon-cyan/60">
+            {version}
+          </p>
+        )}
+        <p className="font-mono text-xs text-neon-red/70">
           Release feed offline{err ? `: ${err}` : ""}.
         </p>
         <Button variant="cta" size="lg" asChild>
@@ -75,13 +85,9 @@ export function DownloadReleases() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            View releases on GitHub →
+            ↓ Download {version ?? "latest"} →
           </a>
         </Button>
-        <p className="text-[10px] text-muted-foreground/50">
-          Set <code className="font-mono">GITHUB_REPO_*</code> in{" "}
-          <code className="font-mono">website/.env</code> to enable this feed.
-        </p>
       </div>
     );
   }
@@ -90,9 +96,9 @@ export function DownloadReleases() {
 
   return (
     <div className="flex w-full max-w-xl flex-col items-center gap-4">
-      {/* Tag badge */}
+      {/* Version badge */}
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-neon-cyan/60">
-        latest · <span className="text-neon-cyan">{data.tag || "—"}</span>
+        <span className="text-neon-cyan">{version ?? data.tag ?? "—"}</span>
         {data.publishedAt ? ` · ${data.publishedAt.slice(0, 10)}` : ""}
       </p>
 
