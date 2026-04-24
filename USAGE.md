@@ -1,4 +1,4 @@
-# KillNode — User Guide
+# KillNode v1.0.1 Alpha — User Guide
 
 > **Legal reminder:** Use KillNode only on systems and networks you own or are explicitly authorized to administer. Read [LEGAL_AND_ETHICS.md](./LEGAL_AND_ETHICS.md) before proceeding.
 
@@ -6,29 +6,70 @@
 
 ## Table of Contents
 
-1. [First Launch](#1-first-launch)
-2. [Interface Overview](#2-interface-overview)
-3. [Tor Orchestrator](#3-tor-orchestrator)
+1. [Web Proxy Browser (no install)](#1-web-proxy-browser-no-install)
+2. [First Launch (desktop)](#2-first-launch-desktop)
+3. [Interface Overview](#3-interface-overview)
+4. [Tor Orchestrator](#4-tor-orchestrator)
    - [Activating Tor](#activating-tor)
    - [Bootstrap Progress](#bootstrap-progress)
    - [Ghost Mode](#ghost-mode)
    - [New Identity](#new-identity)
    - [Exit Region](#exit-region)
    - [Bridges (Pluggable Transports)](#bridges-pluggable-transports)
-4. [Proxy Mesh](#4-proxy-mesh)
+5. [Proxy Mesh](#5-proxy-mesh)
    - [Using Proxies from External Apps](#using-proxies-from-external-apps)
-5. [Neural Killswitch](#5-neural-killswitch)
+6. [Neural Killswitch](#6-neural-killswitch)
    - [Dead-Man Timer](#dead-man-timer)
    - [Restoring Network Access](#restoring-network-access)
-6. [Settings Reference](#6-settings-reference)
-7. [System Tray](#7-system-tray)
-8. [Data & Privacy](#8-data--privacy)
-9. [Threat Model](#9-threat-model)
-10. [Website & Admin](#10-website--admin)
+7. [Settings Reference](#7-settings-reference)
+8. [System Tray](#8-system-tray)
+9. [Data & Privacy](#9-data--privacy)
+10. [Threat Model](#10-threat-model)
+11. [Website & Admin](#11-website--admin)
 
 ---
 
-## 1. First Launch
+## 1. Web Proxy Browser (no install)
+
+The fastest way to bypass a blocked site: visit **[killnode.vercel.app/browse](https://killnode.vercel.app/browse)** from any browser.
+
+### How it works
+
+1. Type any URL (e.g. `example.com`) and click **Browse**.
+2. KillNode's servers fetch the page on your behalf.
+3. Your ISP only sees traffic to `killnode.vercel.app` — the actual destination is hidden.
+4. All links, images, and sub-resources are rewritten to keep routing through the proxy.
+
+### Built-in navigation bar
+
+Every proxied page has a floating navigation bar injected at the top:
+
+| Control | Action |
+|---------|--------|
+| URL input | Type a new address and press Enter or click **Go** |
+| `←` / `→` | Browser history back / forward |
+| **KN** link | Return to the `/browse` start page |
+
+### Quick-access tools
+
+The `/browse` start page includes one-click buttons for:
+
+- `check.torproject.org` — confirms Tor routing
+- `dnsleaktest.com` — checks for DNS leaks
+- `whatismyipaddress.com` — shows your visible IP
+- `ipleak.net` — combined IP + WebRTC leak test
+- `browserleaks.com` — browser fingerprint analysis
+
+### Limitations
+
+- Sites requiring login generally do not work (cookies are scoped to `killnode.vercel.app`).
+- JavaScript-heavy single-page apps may render partially.
+- WebSocket connections are not proxied.
+- For full Tor anonymity, use the desktop app.
+
+---
+
+## 2. First Launch (desktop)
 
 When KillNode starts for the first time it:
 
@@ -41,7 +82,7 @@ When KillNode starts for the first time it:
 
 ---
 
-## 2. Interface Overview
+## 3. Interface Overview
 
 The main window has three cards:
 
@@ -55,7 +96,7 @@ The header shows the global Tor status pill and a live circuit count pill.
 
 ---
 
-## 3. Tor Orchestrator
+## 4. Tor Orchestrator
 
 ### Activating Tor
 
@@ -120,7 +161,7 @@ If no `lyrebird` binary is found (dev build without the full Expert Bundle), bri
 
 ---
 
-## 4. Proxy Mesh
+## 5. Proxy Mesh
 
 When Tor is active, two local proxy listeners accept connections:
 
@@ -152,7 +193,7 @@ export https_proxy=http://127.0.0.1:9742
 
 ---
 
-## 5. Neural Killswitch
+## 6. Neural Killswitch
 
 The killswitch performs an **ordered, irreversible teardown**. Use it when you need to go dark immediately.
 
@@ -212,7 +253,7 @@ networksetup -setnetworkserviceenabled Wi-Fi on
 
 ---
 
-## 6. Settings Reference
+## 7. Settings Reference
 
 All settings persist to the SQLite database in `userData`.
 
@@ -227,7 +268,7 @@ All settings persist to the SQLite database in `userData`.
 
 ---
 
-## 7. System Tray
+## 8. System Tray
 
 KillNode minimizes to the system tray instead of closing when you click the window close button.
 
@@ -239,7 +280,7 @@ KillNode minimizes to the system tray instead of closing when you click the wind
 
 ---
 
-## 8. Data & Privacy
+## 9. Data & Privacy
 
 ### Where data is stored
 
@@ -265,9 +306,11 @@ Inside that directory:
 
 ---
 
-## 9. Threat Model
+## 10. Threat Model
 
 KillNode provides meaningful privacy protections for specific threat scenarios, but it is **not** equivalent to Tor Browser.
+
+### Desktop app
 
 | What is protected | How |
 |------------------|-----|
@@ -283,11 +326,25 @@ KillNode provides meaningful privacy protections for specific threat scenarios, 
 | Browser fingerprinting | Tor Browser's anonymity set is not replicated here |
 | WebRTC leaks | Out-of-scope for the proxy architecture |
 
+### Web Proxy Browser (`/browse`)
+
+| What is protected | How |
+|------------------|-----|
+| ISP visibility of destination | Request originates from Vercel servers, not your machine |
+| DNS of destination | No DNS lookup for the destination from your network |
+
+| What is **not** protected | Why |
+|--------------------------|-----|
+| Vercel server visibility | Vercel sees the destination URL in the query string |
+| Login sessions | Cookies cannot be scoped to the proxied domain |
+| WebSockets | Not proxied |
+| JavaScript fingerprinting on proxied pages | JS runs in your browser with your real fingerprint |
+
 **Bottom line:** KillNode is a focused privacy tool, not an anonymity guarantee. For high-stakes operational security, use Tails OS or Tor Browser on a dedicated air-gapped machine.
 
 ---
 
-## 10. Website & Admin
+## 11. Website & Admin
 
 The [KillNode website](https://killnode.vercel.app) provides the public-facing blog and a download widget that always links to the latest GitHub Release.
 

@@ -23,6 +23,12 @@ export function SiteHeader() {
             Blog
           </Link>
           <Link
+            href="/browse"
+            className="rounded border border-neon-cyan/20 px-3 py-1.5 font-mono text-xs transition-colors hover:border-neon-cyan/50 hover:text-neon-cyan focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neon-cyan"
+          >
+            Proxy
+          </Link>
+          <Link
             href="/#download"
             className="rounded px-3 py-1.5 transition-colors hover:text-neon-red focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neon-red"
           >

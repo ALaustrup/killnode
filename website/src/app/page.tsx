@@ -12,17 +12,17 @@ const FEATURES = [
   },
   {
     label: "Neural Killswitch",
-    desc: "Ordered teardown: proxy mesh → Tor → OS interface severance. Optional dead-man timer auto-fires on unexpected Tor disconnect.",
+    desc: "Ordered teardown: proxy mesh → Tor → OS interface severance. Dead-man timer auto-fires on unexpected Tor disconnect.",
     accent: "red",
   },
   {
     label: "Proxy Mesh",
-    desc: "HTTP bridge on :9742 and hardened SOCKS5 gateway on :9741 — IPv4, hostname, and IPv6 — both route into Tor after bootstrap.",
+    desc: "HTTP bridge on :9742 and hardened SOCKS5 gateway on :9741 — IPv4, hostname, and IPv6 — both tunnel through Tor.",
     accent: "cyan",
   },
   {
-    label: "Pluggable Transports",
-    desc: "Paste obfs4 bridge lines from bridges.torproject.org. Lyrebird is bundled — no separate download needed.",
+    label: "Web Proxy Browser",
+    desc: "Browser-based proxy built into the website. Routes all requests through KillNode servers — no install, no setup.",
     accent: "red",
   },
 ];
@@ -38,7 +38,7 @@ export default function HomePage() {
           <NeuralLogo className="mb-8 h-28 w-28 md:h-40 md:w-40" />
 
           <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.4em] text-neon-cyan/70">
-            v0.2.0-alpha · focus refactor
+            v1.0.1 Alpha
           </p>
 
           <h1 className="font-display text-5xl font-black tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
@@ -47,9 +47,9 @@ export default function HomePage() {
           </h1>
 
           <p className="mt-6 max-w-lg text-base text-muted-foreground md:text-lg">
-            Three-pillar privacy: Tor orchestration with live circuit telemetry, a hardened proxy
-            mesh, and an emergency neural killswitch — built for operators who demand absolute
-            network control.
+            Internet anonymity tooling built for operators. Tor orchestration with live circuit
+            telemetry, a hardened proxy mesh, a neural killswitch, and an instant web proxy —
+            all in one package.
           </p>
 
           <div className="mt-3 flex flex-wrap justify-center gap-2 font-mono text-[10px] text-muted-foreground/70">
@@ -58,7 +58,7 @@ export default function HomePage() {
             <span className="rounded border border-neon-cyan/20 px-2 py-0.5">Tor</span>
             <span className="rounded border border-neon-cyan/20 px-2 py-0.5">Control Port</span>
             <span className="rounded border border-neon-red/20 px-2 py-0.5">obfs4 / lyrebird</span>
-            <span className="rounded border border-neon-red/20 px-2 py-0.5">SQLite</span>
+            <span className="rounded border border-neon-red/20 px-2 py-0.5">Web Proxy</span>
           </div>
 
           {/* Download */}
@@ -76,13 +76,20 @@ export default function HomePage() {
           </div>
 
           {/* Quick nav */}
-          <div className="mt-14 grid w-full max-w-md grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mt-14 grid w-full max-w-lg grid-cols-1 gap-3 sm:grid-cols-3">
             <Link
               href="/blog"
               className="group flex items-center gap-3 rounded border border-neon-cyan/20 bg-card/40 px-5 py-4 text-left text-sm font-mono text-muted-foreground transition-colors hover:border-neon-cyan/50 hover:bg-card/60 hover:text-neon-cyan"
             >
               <span className="text-neon-cyan opacity-60 transition-opacity group-hover:opacity-100">→</span>
-              <span>Signal log (blog)</span>
+              <span>Signal log</span>
+            </Link>
+            <Link
+              href="/browse"
+              className="group flex items-center gap-3 rounded border border-neon-cyan/20 bg-card/40 px-5 py-4 text-left text-sm font-mono text-muted-foreground transition-colors hover:border-neon-cyan/50 hover:bg-card/60 hover:text-neon-cyan"
+            >
+              <span className="text-neon-cyan opacity-60 transition-opacity group-hover:opacity-100">→</span>
+              <span>Proxy browser</span>
             </Link>
             <Link
               href="/admin/login"
@@ -124,16 +131,19 @@ export default function HomePage() {
             Roadmap
           </p>
           <div className="grid grid-cols-1 gap-4 font-mono text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
-            {["Phase 0: Foundation", "Phase 1: Hardening", "Phase 2: Distribution", "Phase 3/4: Messaging & Browser"].map(
-              (p, i) => (
-                <div
-                  key={p}
-                  className={`rounded border px-4 py-3 ${i < 2 ? "border-neon-cyan/30 text-neon-cyan/80" : "border-white/10 text-muted-foreground/50"}`}
-                >
-                  {i < 2 ? "✓ " : "○ "}{p}
-                </div>
-              )
-            )}
+            {[
+              { label: "Phase 0: Foundation", done: true },
+              { label: "Phase 1: Hardening", done: true },
+              { label: "Phase 2: Web Proxy Browser", done: true },
+              { label: "Phase 3: Messaging & Onion Routing", done: false },
+            ].map((p) => (
+              <div
+                key={p.label}
+                className={`rounded border px-4 py-3 ${p.done ? "border-neon-cyan/30 text-neon-cyan/80" : "border-white/10 text-muted-foreground/50"}`}
+              >
+                {p.done ? "✓ " : "○ "}{p.label}
+              </div>
+            ))}
           </div>
           <p className="mt-4 text-xs text-muted-foreground/50">
             Full specification in{" "}
