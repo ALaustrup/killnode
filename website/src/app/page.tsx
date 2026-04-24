@@ -7,22 +7,22 @@ import { DownloadReleases } from "@/components/download-releases";
 const FEATURES = [
   {
     label: "Tor Orchestration",
-    desc: "Start, stop, and verify Tor circuits with circuit-dirt tuning. Ghost mode rotates identity automatically.",
+    desc: "Real control-port integration: live bootstrap progress (0–100%), circuit count, SIGNAL NEWNYM, and Ghost mode circuit rotation.",
     accent: "cyan",
   },
   {
     label: "Neural Killswitch",
-    desc: "Ordered teardown: torrents → proxy mesh → obfuscation children → Tor → OS interface severance.",
+    desc: "Ordered teardown: proxy mesh → Tor → OS interface severance. Optional dead-man timer auto-fires on unexpected Tor disconnect.",
     accent: "red",
   },
   {
     label: "Proxy Mesh",
-    desc: "HTTP bridge on :9742 and SOCKS5 ingress on :9741 — both route into Tor after circuit confirmation.",
+    desc: "HTTP bridge on :9742 and hardened SOCKS5 gateway on :9741 — IPv4, hostname, and IPv6 — both route into Tor after bootstrap.",
     accent: "cyan",
   },
   {
-    label: "Secure WebTorrent",
-    desc: "Main-process WebTorrent with DHT/LSD/UTP off. Tracker HTTP routed via SOCKS proxy agent.",
+    label: "Pluggable Transports",
+    desc: "Paste obfs4 bridge lines from bridges.torproject.org. Lyrebird is bundled — no separate download needed.",
     accent: "red",
   },
 ];
@@ -38,7 +38,7 @@ export default function HomePage() {
           <NeuralLogo className="mb-8 h-28 w-28 md:h-40 md:w-40" />
 
           <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.4em] text-neon-cyan/70">
-            neural privacy surface · alpha
+            v0.2.0-alpha · focus refactor
           </p>
 
           <h1 className="font-display text-5xl font-black tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
@@ -47,15 +47,17 @@ export default function HomePage() {
           </h1>
 
           <p className="mt-6 max-w-lg text-base text-muted-foreground md:text-lg">
-            Tor orchestration, proxy mesh, and an emergency neural killswitch — built for operators
-            who demand absolute network control.
+            Three-pillar privacy: Tor orchestration with live circuit telemetry, a hardened proxy
+            mesh, and an emergency neural killswitch — built for operators who demand absolute
+            network control.
           </p>
 
           <div className="mt-3 flex flex-wrap justify-center gap-2 font-mono text-[10px] text-muted-foreground/70">
             <span className="rounded border border-neon-cyan/20 px-2 py-0.5">Next.js 15</span>
             <span className="rounded border border-neon-cyan/20 px-2 py-0.5">Electron</span>
             <span className="rounded border border-neon-cyan/20 px-2 py-0.5">Tor</span>
-            <span className="rounded border border-neon-red/20 px-2 py-0.5">WebTorrent</span>
+            <span className="rounded border border-neon-cyan/20 px-2 py-0.5">Control Port</span>
+            <span className="rounded border border-neon-red/20 px-2 py-0.5">obfs4 / lyrebird</span>
             <span className="rounded border border-neon-red/20 px-2 py-0.5">SQLite</span>
           </div>
 

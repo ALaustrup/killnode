@@ -5,14 +5,9 @@ import path from "path";
 const prisma = new PrismaClient();
 
 async function main() {
-  const count = await prisma.post.count();
-  if (count > 0) {
-    console.log("Database already seeded.");
-    return;
-  }
   const jsonPath = path.join(process.cwd(), "data", "posts.json");
   if (!fs.existsSync(jsonPath)) {
-    console.log("No data/posts.json to seed from.");
+    console.log("No data/posts.json found — skipping seed.");
     return;
   }
   const raw = fs.readFileSync(jsonPath, "utf8");
@@ -23,10 +18,15 @@ async function main() {
     content: string;
     date: string;
   }[];
+
+  let created = 0;
+  let updated = 0;
+
   for (const p of posts) {
     const d = new Date(p.date);
-    await prisma.post.create({
-      data: {
+    const result = await prisma.post.upsert({
+      where: { slug: p.slug },
+      create: {
         slug: p.slug,
         title: p.title,
         excerpt: p.excerpt,
@@ -34,9 +34,22 @@ async function main() {
         createdAt: d,
         updatedAt: d,
       },
+      update: {
+        title: p.title,
+        excerpt: p.excerpt,
+        content: p.content,
+        updatedAt: d,
+      },
     });
+    // Check if it was a create or update by comparing createdAt
+    if (result.createdAt.getTime() === d.getTime()) {
+      created++;
+    } else {
+      updated++;
+    }
   }
-  console.log(`Seeded ${posts.length} posts.`);
+
+  console.log(`Seed complete: ${created} created, ${updated} updated out of ${posts.length} entries.`);
 }
 
 main()

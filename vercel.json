@@ -3,7 +3,7 @@
   "framework": "nextjs",
 
   "installCommand": "npm ci",
-  "buildCommand": "cd website && npx prisma generate && next build",
+  "buildCommand": "cd website && npx prisma generate && npx prisma db seed && next build",
   "outputDirectory": "website/.next",
 
   "env": {
