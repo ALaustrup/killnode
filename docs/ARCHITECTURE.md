@@ -153,9 +153,9 @@ Migrations are **not** run during Vercel builds — they must be applied manuall
 | Language | TypeScript 5 throughout |
 | Database ORM | Prisma 6 |
 | Database | SQLite (via Prisma sqlite provider) |
-| Tor | Spawned child process (`tor` binary) |
-| Proxy | `proxy-chain` (HTTP), custom SOCKS5 gateway |
-| Torrent | `webtorrent` v2 (ESM) |
+| Tor | Spawned child process (`tor` binary from Tor Expert Bundle) |
+| Tor control | Native TCP socket to control port 9051 (cookie auth) |
+| Proxy | `proxy-chain` (HTTP), hardened SOCKS5 gateway |
 | Packaging | `electron-builder` 25 |
 
 ### Process Model
@@ -189,7 +189,7 @@ Electron uses a multi-process architecture:
 │                          ipcRenderer    │
 │                                         │
 │  Renderer Process (Chromium)            │
-│  renderer/src/main.ts   UI logic        │
+│  renderer/src/main.ts   Three-card UI        │
 │  renderer/src/style.css UI styles       │
 └─────────────────────────────────────────┘
 ```
@@ -202,21 +202,23 @@ Renderer → Main (invoke):
 ```
 kn:tor:start          Start Tor
 kn:tor:stop           Stop Tor
-kn:proxy:start        Start HTTP + SOCKS5 proxies
-kn:proxy:stop         Stop proxies
+kn:tor:status         Current Tor status
+kn:tor:newident       SIGNAL NEWNYM (new circuits)
+kn:tor:bootstrap      Bootstrap progress + circuit count
+kn:proxy:status       Proxy port info and session state
 kn:killswitch         Fire neural killswitch
-kn:torrent:add        Add magnet URI
-kn:torrent:seed       Seed file paths
-kn:torrent:remove     Remove torrent by info-hash
-kn:torrent:list       List active telemetry
-kn:settings:get       Read a setting key
-kn:settings:set       Write a setting key
+kn:restore-hint       Recovery command hint
+kn:settings:get       Read all settings
+kn:settings:set       Write partial settings update
+kn:dialog:tor         Native file picker for tor binary
 ```
 
 Main → Renderer (on):
 ```
-kn:torrent:telemetry  Push telemetry snapshot (1 Hz)
 kn:toast              Show a toast notification
+kn:tor:status-push    Push Tor running status change
+kn:dead-man-fired     Dead-man timer has fired
+kn:dirty-shutdown     Unclean exit detected on launch
 ```
 
 No `nodeIntegration` is enabled in the renderer. All Node.js operations run in the main process behind the IPC boundary.
@@ -248,14 +250,6 @@ model Setting {
   key   String @id
   value String
 }
-
-model TorrentJob {
-  infoHash  String   @id
-  magnetUri String
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
 ```
 
 - The database file lives in Electron's `userData` directory (`killnode.db`).
@@ -263,25 +257,6 @@ model TorrentJob {
 - Generated client output: `desktop/src/main/generated/prisma/`.
 - The Vite plugin `copyDesktopPrismaClient` in `electron.vite.config.ts` copies `src/main/generated` → `out/main/generated` on every build so the packaged app can resolve the client.
 - `asarUnpack` in `desktop/package.json` unpacks `@prisma/**` and `.prisma/**` from the ASAR archive so the native Prisma query engine is accessible at runtime.
-
-### Module Loading (ESM / CJS)
-
-`electron-vite` bundles the main process with Rollup in CJS mode (Electron's Node.js runtime defaults to CommonJS). However, `webtorrent` v2+ and `magnet-uri` v7+ are **pure ESM** packages.
-
-**The problem:** Rollup's `externalizeDepsPlugin` causes it to emit `require("webtorrent")` for externalized dependencies, which fails at runtime in a CJS module (`ERR_REQUIRE_ESM`).
-
-**The solution** (`torrent-service.ts`): dynamic `await import()` calls wrapped in lazy-loading getter functions:
-
-```typescript
-async function getWebTorrent() {
-  if (!_WebTorrent) {
-    _WebTorrent = ((await import("webtorrent")) as { default: … }).default;
-  }
-  return _WebTorrent!;
-}
-```
-
-Rollup preserves dynamic `import()` expressions in the output (does not rewrite them to `require()`). Node.js 22 (inside Electron 33) handles `import()` natively even from a CJS module context.
 
 ### Build Pipeline
 

@@ -2,7 +2,7 @@
   "name": "@killnode/desktop",
   "version": "1.0.0",
   "private": true,
-  "description": "KillNode desktop — Tor, proxy mesh, neural killswitch, WebTorrent",
+  "description": "KillNode desktop — Tor orchestration, proxy mesh, neural killswitch",
   "author": {
     "name": "Alaustrup",
     "email": "alaustrup@users.noreply.github.com"
@@ -20,11 +20,9 @@
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
-    "magnet-uri": "^7.0.5",
     "proxy-chain": "^2.4.1",
     "socks-proxy-agent": "^8.0.4",
-    "socks": "^2.8.3",
-    "webtorrent": "^2.5.1"
+    "socks": "^2.8.3"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
@@ -56,12 +54,6 @@
     "asarUnpack": [
       "**/node_modules/@prisma/**",
       "**/node_modules/.prisma/**"
-    ],
-    "protocols": [
-      {
-        "name": "Magnet URI",
-        "schemes": ["magnet"]
-      }
     ],
     "win": {
       "target": ["nsis", "zip"],

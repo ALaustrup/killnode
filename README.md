@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/Alaustrup/killnode)](https://github.com/Alaustrup/killnode/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
-**KillNode** is a privacy-focused desktop application for Windows and Linux that routes your traffic through Tor, manages a local HTTP/SOCKS proxy mesh, handles WebTorrent with SOCKS-backed trackers, and provides a neural killswitch to sever your network connection on demand.
+**KillNode** is a privacy-focused desktop application for Windows and Linux built around three core pillars: **Tor Orchestration** (including real control-port usage, Pluggable Transports, and live circuit telemetry), a local **Proxy Mesh** (HTTP + SOCKS5 gateways into Tor), and a **Neural Killswitch** that severs your network on demand.
 
 The project is a **monorepo** containing:
 
@@ -34,16 +34,26 @@ For step-by-step installation instructions see **[docs/INSTALL.md](./docs/INSTAL
 
 ## Features
 
-- **Tor integration** — Tor Expert Bundle (v15.0.9) is **pre-bundled** in the installer; no separate Tor installation needed. KillNode spawns and manages the Tor process and routes the Electron session through it automatically.
-- **HTTP proxy bridge** — `proxy-chain` HTTP proxy on port **9742** forwarding to Tor's SOCKS port, usable by any HTTP-aware application.
-- **SOCKS5 ingress** — minimal SOCKS5 gateway on port **9741** for native SOCKS clients.
-- **Ghost mode** — tightened circuit-dirtiness settings for more aggressive circuit rotation.
-- **Optional obfuscation** — launch Shadowsocks or V2Ray child processes (binaries not included) for bridge-based censorship circumvention.
-- **Neural killswitch** — ordered teardown: WebTorrent → proxy stack → Tor → network severance. One click to go dark.
-- **WebTorrent (main process)** — add magnets, seed files, drag-and-drop. Tracker HTTP requests routed through Tor SOCKS. `utp`, `dht`, `lsd`, and `webSeeds` disabled to shrink UDP/WebRTC surface.
-- **Magnet URI handler** — register KillNode as the OS handler for `magnet:` links.
+### Tor Orchestrator
+- **Pre-bundled Tor** — Tor Expert Bundle (v15.0.9) ships inside the installer; no separate installation needed.
+- **Real control-port integration** — cookie authentication on port 9051; `SIGNAL NEWNYM` (New Identity), `GETINFO bootstrap-phase` (live 0–100% progress bar), `GETINFO circuit-status` (live circuit count).
+- **Pluggable Transports / obfs4 bridges** — paste bridge lines from [bridges.torproject.org](https://bridges.torproject.org); KillNode writes `UseBridges 1 / ClientTransportPlugin obfs4 exec lyrebird / Bridge obfs4 …` into the torrc automatically. `lyrebird` is bundled inside the Tor Expert Bundle — no extra binary needed.
+- **Ghost mode** — sets `MaxCircuitDirtiness 45` for aggressive circuit rotation.
+- **Exit region hint** — steer exit nodes to Americas / Europe / Asia / EU-strict.
+
+### Proxy Mesh
+- **HTTP bridge** — `proxy-chain` on port **9742** → Tor SOCKS; usable by any HTTP-aware application.
+- **Hardened SOCKS5 gateway** — port **9741** → Tor SOCKS; supports IPv4, hostname, and IPv6; proper error codes and buffered reads.
+- **Electron session proxy** — applied automatically after Tor bootstraps.
+
+### Neural Killswitch
+- **One-click ordered teardown** — proxy stack → Tor → OS-level network severance.
+- **Dead-man timer** — optional (30 s / 60 s / 120 s / 5 min). If Tor disconnects unexpectedly and does not come back within N seconds, the killswitch fires automatically.
+- **Dirty-shutdown detection** — on next launch, KillNode warns if Tor was active when the app last exited unexpectedly.
+
+### App
 - **System tray** — runs minimized; restore or quit from the tray icon.
-- **SQLite settings store** — lightweight key/value store and torrent-job history in Electron `userData`, no remote database required.
+- **SQLite settings store** — lightweight key/value store in Electron `userData`; no remote database required.
 
 ---
 
@@ -52,7 +62,7 @@ For step-by-step installation instructions see **[docs/INSTALL.md](./docs/INSTAL
 | Document | Audience | Content |
 |----------|----------|---------|
 | [docs/INSTALL.md](./docs/INSTALL.md) | End users | Platform-by-platform installation guide |
-| [USAGE.md](./USAGE.md) | End users | Help guide — Tor, proxy, killswitch, torrents |
+| [USAGE.md](./USAGE.md) | End users | Help guide — Tor Orchestrator, Proxy Mesh, Killswitch, Bridges |
 | [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | All | Common errors and fixes |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Developers | System design and code layout |
 | [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) | Developers | How to build, test, and contribute |
@@ -119,7 +129,7 @@ killnode/
 │       ├── ci.yml                  # lint + build on every push/PR
 │       └── release-desktop.yml     # package + publish on v* tags
 ├── desktop/
-│   ├── prisma/                     # SQLite schema (Setting, TorrentJob)
+│   ├── prisma/                     # SQLite schema (Setting key/value store)
 │   ├── resources/tor/              # Tor binary placeholder (not shipped)
 │   └── src/
 │       ├── main/                   # Electron main process (Node 22)
@@ -188,7 +198,7 @@ See **[docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md)** for the full deployment w
 
 ## License
 
-[MIT](./LICENSE). Bundled and peer dependencies (Tor, WebTorrent, Prisma, Next.js, Electron) carry their own licenses.
+[MIT](./LICENSE). Bundled and peer dependencies (Tor Expert Bundle, Prisma, Next.js, Electron, proxy-chain, socks) carry their own licenses.
 
 ---
 

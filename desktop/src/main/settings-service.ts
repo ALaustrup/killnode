@@ -4,29 +4,23 @@ export type KillNodeSettings = {
   torCustomPath?: string;
   ghostMode?: boolean;
   locationCode?: string;
-  proxyRotationUrl?: string;
-  shadowsocksBinaryPath?: string;
-  shadowsocksConfigPath?: string;
-  v2rayBinaryPath?: string;
-  v2rayConfigPath?: string;
-  obfuscationEnabled?: boolean;
+  bridgeEnabled?: boolean;
+  bridgeLines?: string;
+  deadManSeconds?: string;
 };
 
 const KEYS: (keyof KillNodeSettings)[] = [
   "torCustomPath",
   "ghostMode",
   "locationCode",
-  "proxyRotationUrl",
-  "shadowsocksBinaryPath",
-  "shadowsocksConfigPath",
-  "v2rayBinaryPath",
-  "v2rayConfigPath",
-  "obfuscationEnabled",
+  "bridgeEnabled",
+  "bridgeLines",
+  "deadManSeconds",
 ];
 
 function parseValue(key: keyof KillNodeSettings, raw: string | undefined): unknown {
   if (raw === undefined) return undefined;
-  if (key === "ghostMode" || key === "obfuscationEnabled") return raw === "1" || raw === "true";
+  if (key === "ghostMode" || key === "bridgeEnabled") return raw === "1" || raw === "true";
   return raw;
 }
 

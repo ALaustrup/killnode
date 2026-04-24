@@ -185,22 +185,96 @@ input[type="text"] {
   padding-top: 0.45rem;
 }
 
-.onion-box {
-  margin-top: 0.5rem;
-  padding: 0.45rem 0.55rem;
-  border-radius: 4px;
-  background: #030305;
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+.progress-wrap {
+  position: relative;
+  margin-top: 0.65rem;
+  height: 18px;
+  background: rgba(0, 255, 255, 0.07);
   border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0, 255, 255, 0.55), rgba(0, 200, 200, 0.7));
+  transition: width 0.4s ease;
+  border-radius: 3px;
+}
+.progress-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, monospace;
+  font-size: 0.62rem;
+  color: #e5e7eb;
+  pointer-events: none;
+}
+
+/* ── Proxy mesh ──────────────────────────────────────────────────────────── */
+.proxy-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+.proxy-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.proxy-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  min-width: 72px;
+  font-family: ui-monospace, monospace;
+}
+.proxy-addr {
   font-family: ui-monospace, monospace;
   font-size: 0.72rem;
   color: var(--cyan);
-  word-break: break-all;
-  min-height: 2.25rem;
+  flex: 1;
+}
+.session-status {
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.session-status.proxied {
+  color: #22c55e;
 }
 
-.onion-box.dead {
-  opacity: 0.35;
-  text-decoration: line-through;
+/* ── Misc ────────────────────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  margin: 0.65rem 0;
+}
+.muted-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.circuit-pill {
+  font-size: 0.6rem;
+}
+.btn-sm {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.65rem;
+}
+textarea.bridge-area {
+  width: 100%;
+  margin-top: 0.45rem;
+  background: #030305;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  color: #e5e7eb;
+  padding: 0.4rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-family: ui-monospace, monospace;
+  resize: vertical;
 }
 
 .toggle {

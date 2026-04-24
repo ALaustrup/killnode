@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webUtils } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 
 const INVOKE_CHANNELS = new Set([
   "kn:settings:get",
@@ -6,17 +6,13 @@ const INVOKE_CHANNELS = new Set([
   "kn:tor:start",
   "kn:tor:stop",
   "kn:tor:status",
+  "kn:tor:newident",
+  "kn:tor:bootstrap",
   "kn:proxy:status",
   "kn:killswitch",
   "kn:restore-hint",
-  "kn:onion:generate",
   "kn:shell:open",
   "kn:dialog:tor",
-  "kn:dialog:seed-files",
-  "kn:torrent:add",
-  "kn:torrent:seed",
-  "kn:torrent:remove",
-  "kn:torrent:telemetry",
 ]);
 
 function invoke<T = unknown>(channel: string, ...args: unknown[]): Promise<T> {
@@ -26,69 +22,64 @@ function invoke<T = unknown>(channel: string, ...args: unknown[]): Promise<T> {
   return ipcRenderer.invoke(channel, ...args) as Promise<T>;
 }
 
-const TELEMETRY_CHANNEL = "kn:torrent:telemetry";
 const TOAST_CHANNEL = "kn:toast";
+const STATUS_PUSH_CHANNEL = "kn:tor:status-push";
+const DEAD_MAN_FIRED_CHANNEL = "kn:dead-man-fired";
+const DIRTY_SHUTDOWN_CHANNEL = "kn:dirty-shutdown";
 
 export type KillNodeSettings = {
   torCustomPath?: string;
   ghostMode?: boolean;
   locationCode?: string;
-  proxyRotationUrl?: string;
-  shadowsocksBinaryPath?: string;
-  shadowsocksConfigPath?: string;
-  v2rayBinaryPath?: string;
-  v2rayConfigPath?: string;
-  obfuscationEnabled?: boolean;
-};
-
-export type TorrentTelemetry = {
-  infoHash: string;
-  name: string;
-  progress: number;
-  downloadSpeed: number;
-  uploadSpeed: number;
-  downloaded: number;
-  uploaded: number;
-  ratio: number;
-  numPeers: number;
-  done: boolean;
+  bridgeEnabled?: boolean;
+  bridgeLines?: string;
+  deadManSeconds?: string;
 };
 
 const api = {
   settingsGet: () => invoke<KillNodeSettings>("kn:settings:get"),
   settingsSet: (partial: Partial<KillNodeSettings>) =>
     invoke<KillNodeSettings>("kn:settings:set", partial),
+
   torStart: () => invoke<{ ok: boolean; message: string }>("kn:tor:start"),
   torStop: () => invoke<{ ok: boolean; message: string }>("kn:tor:stop"),
   torStatus: () => invoke<{ running: boolean }>("kn:tor:status"),
+  torNewIdent: () => invoke<{ ok: boolean; message: string }>("kn:tor:newident"),
+  torBootstrap: () =>
+    invoke<{ progress: number; circuits: number }>("kn:tor:bootstrap"),
+
   proxyStatus: () =>
     invoke<{ torSocks: number; httpPort: number; socksPort: number; sessionProxied: boolean }>(
       "kn:proxy:status"
     ),
+
   killswitch: () => invoke<{ ok: boolean; message: string }>("kn:killswitch"),
   restoreHint: () => invoke<string>("kn:restore-hint"),
-  onionGenerate: () => invoke<{ url: string; simulated: boolean }>("kn:onion:generate"),
   openExternal: (url: string) => invoke("kn:shell:open", url),
   pickTorBinary: () => invoke<string | null>("kn:dialog:tor"),
-  pickSeedFiles: () => invoke<string[]>("kn:dialog:seed-files"),
-  torrentAdd: (magnetUri: string) =>
-    invoke<{ ok: boolean; message: string; infoHash?: string }>("kn:torrent:add", magnetUri),
-  torrentSeed: (paths: string[]) =>
-    invoke<{ ok: boolean; message: string; infoHash?: string }>("kn:torrent:seed", paths),
-  torrentRemove: (infoHash: string) =>
-    invoke<{ ok: boolean; message: string }>("kn:torrent:remove", infoHash),
-  torrentTelemetry: () => invoke<TorrentTelemetry[]>("kn:torrent:telemetry"),
-  pathsFromDroppedFiles: (files: File[]) =>
-    Array.from(files ?? []).map((f) => webUtils.getPathForFile(f)),
-  onTelemetry: (cb: (rows: TorrentTelemetry[]) => void) => {
-    const listener = (_e: Electron.IpcRendererEvent, payload: TorrentTelemetry[]) => cb(payload);
-    ipcRenderer.on(TELEMETRY_CHANNEL, listener);
-    return () => ipcRenderer.removeListener(TELEMETRY_CHANNEL, listener);
-  },
+
   onToast: (cb: (message: string) => void) => {
     const listener = (_e: Electron.IpcRendererEvent, message: string) => cb(message);
     ipcRenderer.on(TOAST_CHANNEL, listener);
     return () => ipcRenderer.removeListener(TOAST_CHANNEL, listener);
+  },
+
+  onTorStatusPush: (cb: (status: { running: boolean }) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, payload: { running: boolean }) => cb(payload);
+    ipcRenderer.on(STATUS_PUSH_CHANNEL, listener);
+    return () => ipcRenderer.removeListener(STATUS_PUSH_CHANNEL, listener);
+  },
+
+  onDeadManFired: (cb: () => void) => {
+    const listener = () => cb();
+    ipcRenderer.on(DEAD_MAN_FIRED_CHANNEL, listener);
+    return () => ipcRenderer.removeListener(DEAD_MAN_FIRED_CHANNEL, listener);
+  },
+
+  onDirtyShutdown: (cb: () => void) => {
+    const listener = () => cb();
+    ipcRenderer.on(DIRTY_SHUTDOWN_CHANNEL, listener);
+    return () => ipcRenderer.removeListener(DIRTY_SHUTDOWN_CHANNEL, listener);
   },
 };
 

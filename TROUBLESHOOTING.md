@@ -9,7 +9,7 @@ Quick reference for the most common issues. If your problem is not listed here, 
 1. [Desktop App — Installation](#1-desktop-app--installation)
 2. [Desktop App — First Launch](#2-desktop-app--first-launch)
 3. [Tor & Proxy Issues](#3-tor--proxy-issues)
-4. [WebTorrent / Swarm](#4-webtorrent--swarm)
+4. [Bridges / Pluggable Transports](#4-bridges--pluggable-transports)
 5. [Neural Killswitch — Linux / Kali](#5-neural-killswitch--linux--kali)
 6. [Developer — Prisma & Database](#6-developer--prisma--database)
 7. [Developer — Next.js Website Build](#7-developer--nextjs-website-build)
@@ -113,7 +113,7 @@ Do **not** start the `tor.service` — KillNode spawns its own instance with a c
 
 ## 3. Tor & Proxy Issues
 
-### "Tor failed to start" / timeout after 60 seconds
+### "Tor failed to start" / timeout after 22 seconds
 
 **Check:**
 1. The Tor binary is present and executable (see above).
@@ -125,59 +125,64 @@ Do **not** start the `tor.service` — KillNode spawns its own instance with a c
    netstat -ano | findstr 9050
    ```
 3. A firewall is not blocking Tor's outbound connections on port 443 / 9001.
-4. You are not on a network that actively blocks Tor. If so, use obfuscation bridges.
+4. You are not on a network that actively blocks Tor — if so, enable bridges (see [Section 4](#4-bridges--pluggable-transports)).
+
+### Bootstrap progress bar gets stuck below 100%
+
+- Your network may be congested or blocking Tor directory servers. Try enabling bridges.
+- Check for orphaned Tor processes: `tasklist | findstr tor` (Windows) or `pgrep tor` (Linux), and kill them before retrying.
+
+### Control port errors ("Tor control cookie not found")
+
+The control cookie is written by Tor to `<userData>/tor-data/control_auth_cookie`. If the file is missing, Tor either has not started yet or failed silently.
+
+- Check the developer console (DevTools) for `[tor]` stderr output.
+- Ensure your antivirus is not quarantining files in `%APPDATA%\killnode\tor-data\`.
 
 ### Local HTTP proxy fails immediately (port 9742)
 
 Tor must be running and its SOCKS port accepting connections before the HTTP bridge starts. KillNode waits for SOCKS readiness — if the bridge still fails:
 
-- Check the **Log** panel for `[proxy-chain]` errors.
-- Confirm Tor's SOCKS port by looking at `torrc.killnode` in your `userData` directory.
+- Check the Log section for `[proxy-chain]` errors.
+- Confirm Tor's SOCKS port by inspecting `torrc.killnode` in your `userData` directory.
 
-### SOCKS5 ingress (port 9741) hangs for some clients
+### SOCKS5 gateway (port 9741) hangs for some clients
 
-The minimal SOCKS5 parser handles standard `CONNECT` flows. Exotic clients that send non-standard handshake sequences may hang.
+The SOCKS5 gateway buffers requests properly and supports all address types (IPv4, hostname, IPv6). If a specific client hangs:
 
-**Workaround:** Point the client directly at Tor's SOCKS port (`127.0.0.1:9050`) instead.
+- Try pointing it directly at Tor SOCKS (`127.0.0.1:9050`).
+- Enable verbose logging in the client to see if the SOCKS handshake completes.
 
 ### Electron session not proxied (renderer requests go direct)
 
-`session.defaultSession.setProxy` runs only after:
-1. Tor's SOCKS port is reachable **AND**
-2. The HTTP bridge on 9742 accepts connections.
-
-If you navigated to a page before Tor was ready, hard-reload the renderer page after Tor is active.
+`session.defaultSession.setProxy` runs only after Tor's SOCKS port is reachable AND the HTTP bridge accepts connections. If you navigated to a page before Tor was ready, hard-reload the renderer after Tor is active.
 
 ### Tor is running but my IP hasn't changed
 
 - Visit `https://check.torproject.org` inside the app (routed through Tor) — it should show "Congratulations."
-- If you're testing with an external browser, ensure that browser is configured to use `127.0.0.1:9742` as its HTTP proxy.
+- If you are testing with an external browser, ensure that browser is configured to use `127.0.0.1:9742` as its HTTP proxy.
 - Tor does not change the IP for applications that bypass the proxy.
 
 ---
 
-## 4. WebTorrent / Swarm
+## 4. Bridges / Pluggable Transports
 
-### Magnet link added but download speed is 0 for minutes
+### "Bridges are enabled but Tor connected without them"
 
-- Trackers may be unreachable if Tor is blocking certain ports. Most trackers use port 80 or 443.
-- Check the **Log** panel for `[webtorrent]` tracker errors.
-- Try a magnet with well-seeded public trackers.
-- DHT is disabled — the torrent relies entirely on tracker announces.
+If the `lyrebird` binary is not found in `resources/tor/pluggable_transports/`, KillNode silently starts Tor without bridges and logs the skip. Run `node scripts/download-tor.mjs` to download the full Tor Expert Bundle (which includes `lyrebird`).
 
-### "Torrent already active" message
+### Bridge lines rejected ("no such bridge")
 
-The info-hash is already in the client. If you want to re-add after removal, the in-memory client may still hold it. Restart the app to clear the client state.
+- Ensure bridge lines are in the exact format from bridges.torproject.org:
+  ```
+  obfs4 1.2.3.4:12345 FINGERPRINT cert=... iat-mode=0
+  ```
+- Do not include the protocol prefix (`Bridge obfs4` is added by KillNode automatically).
+- Old or blacklisted bridges will time out. Request fresh bridges.
 
-### Magnet links from browser don't open KillNode
+### Tor takes much longer to bootstrap with bridges
 
-- **Windows:** go to Settings → Apps → Default Apps → search "magnet" and set KillNode as the default.
-- **Linux:** run `xdg-mime default killnode.desktop x-scheme-handler/magnet` and test with `xdg-open "magnet:..."`.
-- Protocol registration only works reliably with the **packaged** app. During `electron-vite dev`, the handler may point at the wrong binary.
-
-### Drag and drop doesn't work
-
-Drag and drop uses `webUtils.getPathForFile` in the preload bridge. Ensure you are running the **packaged** app or a full dev build — the API is not available in browser-only renderer previews.
+This is normal — bridges are slower than direct Tor connections. obfs4 connections typically add 30–60 seconds to bootstrapping.
 
 ---
 
@@ -205,29 +210,18 @@ polkit.addRule(function(action, subject) {
 
 **Option C — grant `CAP_NET_ADMIN` to the binary (`.deb` install only):**
 ```bash
-# Find the installed main executable
 sudo setcap cap_net_admin+eip /opt/KillNode/killnode
-
-# Verify
 getcap /opt/KillNode/killnode
 ```
-> `cap_net_admin` lets the process bring network interfaces up/down without full root. Only use on machines you control.
-
-### `setcap` returns "Operation not supported"
-
-The filesystem containing the binary is likely mounted `nosuid` or `noexec` (common on live USBs). Install to a normal `ext4` partition.
 
 ### `rfkill block all` fails
 
-Install `rfkill`:
 ```bash
 sudo apt-get install rfkill
 ```
-Some hardware wireless kill switches are firmware-gated and cannot be toggled from userspace regardless.
 
 ### "I bricked my networking"
 
-Use a physical console, another network interface, or recovery mode:
 ```bash
 # Linux
 nmcli networking on
@@ -255,41 +249,18 @@ The generated Prisma client is not committed to Git (it is in `.gitignore`). Run
 npm run dev:desktop    # runs prisma generate automatically before electron-vite
 ```
 
-Or explicitly:
-```bash
-cd desktop
-npx prisma generate --schema prisma/schema.prisma
-```
-
 ### Desktop packaged app: Prisma engine missing
 
 `electron-builder` must unpack native Prisma engine binaries from the ASAR archive. The `asarUnpack` config in `desktop/package.json` already lists `@prisma/**` and `.prisma/**`. If you customize packaging, preserve those entries.
 
 ### Monorepo: wrong Prisma models (Setting vs Post)
 
-KillNode has **two separate Prisma schemas** generating into different output directories:
+KillNode has **two separate Prisma schemas**:
 
 | Schema | Output | Database |
 |--------|--------|----------|
 | `website/prisma/schema.prisma` | `website/src/generated/prisma` | PostgreSQL (Neon) |
 | `desktop/prisma/schema.prisma` | `desktop/src/main/generated/prisma` | SQLite |
-
-Always regenerate **both** when working across the monorepo:
-```bash
-# From the monorepo root:
-npm run typecheck:desktop   # includes prisma generate for desktop
-cd website && npx prisma generate
-```
-
-### Website: Prisma cannot connect to database (`P1001`)
-
-- Confirm `DATABASE_URL` and `DIRECT_URL` are set in `website/.env`.
-- For local dev, use the **pooled** Neon connection string for both variables (the direct, non-pooled endpoint is only reachable from servers with a fixed IP in some regions).
-- For a local PostgreSQL: `DATABASE_URL="postgresql://killnode:killnode@localhost:5432/killnode"`.
-
-### Website: `P1002` (advisory lock timeout on Vercel)
-
-Neon's compute endpoint has a cold-start pause. The Vercel `buildCommand` intentionally omits `prisma migrate deploy` — run migrations manually against the Neon database or from a local machine with the direct connection string before deploying.
 
 ---
 
@@ -297,29 +268,11 @@ Neon's compute endpoint has a cold-start pause. The Vercel `buildCommand` intent
 
 ### `EPERM scandir … Application Data` on Windows
 
-Some Windows environments throw `EPERM` when Next.js's file-tracing scans `%USERPROFILE%` and encounters the `Application Data → AppData\Roaming` junction.
-
-Mitigations already in place:
-1. `website/next.config.ts` sets `outputFileTracingRoot` to the monorepo root.
-2. `website/scripts/build.mjs` runs `next build` with `USERPROFILE`, `HOME`, and `LOCALAPPDATA` sandboxed to `website/.next-sandbox-home/`.
-
-If problems persist, use WSL or rely on the Linux CI runner for production builds.
-
-### ESLint errors in generated Prisma client
-
-`eslint.config.mjs` ignores `src/generated/**`. If you see lint errors from generated files, confirm that ignore is present and run `npm run lint:web` again.
+Some Windows environments throw `EPERM` when Next.js's file-tracing scans `%USERPROFILE%`. Mitigations are already in place in `website/next.config.ts` and `website/scripts/build.mjs`. Use WSL or rely on the Linux CI runner for production builds.
 
 ### Admin login returns 401
 
-Verify the Vercel environment variables `ADMIN_USERNAME` and `ADMIN_PASSWORD` do not contain trailing newlines (a common issue when set via `echo "..." | vercel env add`). Remove and re-add them using the Vercel dashboard UI, or rely on the code defaults (`admin` / `killnode2026`) for the alpha.
-
-### Website build: "buildCommand should NOT be longer than 256 characters"
-
-The `buildCommand` in `vercel.json` exceeds Vercel's limit. Keep it short — the current config is:
-```
-cd website && npx prisma generate && next build
-```
-Do not add `echo` statements or chained steps to the `buildCommand`.
+Verify that `ADMIN_USERNAME` and `ADMIN_PASSWORD` in the Vercel environment do not contain trailing newlines. Remove and re-add them using the Vercel dashboard UI.
 
 ---
 
@@ -327,27 +280,15 @@ Do not add `echo` statements or chained steps to the `buildCommand`.
 
 ### `electron-builder` — "Cannot compute electron version from installed node modules"
 
-`electron-builder` requires an **exact** pinned version of `electron`, not a semver range. Check `desktop/package.json`:
+`electron-builder` requires an **exact** pinned version of `electron`:
 ```json
 "electron": "33.4.11"   // correct — exact version
 "electron": "^33.2.0"   // wrong — range not allowed
 ```
 
-### `electron-builder` auto-publishes to GitHub
+### macOS packaging fails
 
-If `GH_TOKEN` is in the environment, `electron-builder` will attempt to publish a release automatically. The `package` script uses `--publish never` to prevent this:
-```
-"package": "npm run build && electron-builder --publish never"
-```
-Do not remove `--publish never` from the script.
-
-### `ERR_REQUIRE_ESM` at runtime (webtorrent / magnet-uri)
-
-`webtorrent` v2+ and `magnet-uri` v7+ are pure ES Modules. They cannot be `require()`'d from a CommonJS bundle. The fix — using dynamic `await import()` in `torrent-service.ts` — is already in place. If you see this error after modifying `torrent-service.ts`, ensure you have not reintroduced a static `import WebTorrent from "webtorrent"` or `createRequire(…)`.
-
-### macOS packaging fails (notarization / DMG)
-
-macOS code-signing and notarization require Apple Developer certificates (`CSC_LINK`, `CSC_KEY_PASSWORD`). These are not configured for the alpha. macOS builds are **disabled** in `release-desktop.yml` until Phase 2.
+macOS code-signing and notarization require Apple Developer certificates (`CSC_LINK`, `CSC_KEY_PASSWORD`). These are not configured for the alpha — macOS builds are disabled in `release-desktop.yml` until Phase 2.
 
 ### `ModuleNotFoundError: No module named 'distutils'` during native module rebuild
 
@@ -363,21 +304,20 @@ Python 3.12+ removed `distutils`. Pin Python 3.11 in your CI or local environmen
 ```
 postgresql://killnode:killnode@localhost:5432/killnode
 ```
-If the job still fails, check that the service container health-check passed (look for `postgres` in the Services section of the job log).
 
 ### Desktop CI `Typecheck desktop` fails on all platforms
 
-The generated Prisma client (`desktop/src/main/generated/prisma`) is gitignored. The `typecheck` script runs `prisma generate` first:
+The generated Prisma client is gitignored. The `typecheck` script runs `prisma generate` first:
 ```
 "typecheck": "prisma generate --schema prisma/schema.prisma && tsc --noEmit …"
 ```
-Both the `typecheck` and `build` CI steps supply `DATABASE_URL: "file:./data/desktop.db"` via `env:` so Prisma generate can resolve the datasource URL.
+Both the `typecheck` and `build` CI steps supply `DATABASE_URL: "file:./data/desktop.db"` via `env:`.
 
 ### Release uploads empty or missing archives
 
-1. Confirm the `Package KillNode` step succeeded (check the step log for `electron-builder` output).
-2. The upload step looks for `desktop/release/*`. Verify the artifacts exist at that path on the runner after packaging.
-3. The `working-directory: desktop` setting means `electron-builder` writes to `desktop/release/` relative to the monorepo root — the upload glob should still find them.
+1. Confirm the `Package KillNode` step succeeded.
+2. The upload step looks for `desktop/release/*`.
+3. Verify the artifacts exist at that path on the runner after packaging.
 
 ---
 
