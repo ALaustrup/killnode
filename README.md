@@ -212,3 +212,7 @@ Required Vercel environment variables:
 ## Maintainer
 
 [Alaustrup](https://github.com/Alaustrup)
+
+---
+
+by ASTRA MATRIX
